@@ -7,22 +7,38 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.14.0**
+Current Version: **0.15.0**
 
 ---
 
-## [0.14.0] - 2026-03-08
+## [0.15.0] — 2026-03-09
 
 ### Added
-- Automatic daily Google Drive backups using a service account and configurable cron schedule
-- Manual "Run Google Drive Backup Now" action in Settings to test the Google Drive upload immediately
-- `POST /api/backup/google-drive/run` endpoint for on-demand Google Drive backup uploads
+- **Google Drive automatic backups** — Daily backups uploaded to Google Drive using OAuth2 refresh token flow (replaces the previous SFTP and service-account approaches which both had blockers)
+- **One-time auth setup script** (`scripts/google-drive-auth.ts`) — Starts a local server, handles OAuth callback, and prints the refresh token for Railway
+- **Manual Google Drive backup** — "Run Google Drive Backup Now" button in Settings triggers an immediate upload
+- **Scratchpad in backups** — The scratchpad content is now included as `Scratchpad.md` at the root of backup archives
+- **Sidebar indent guides** — Dashed vertical lines at each depth level show the notebook/note hierarchy
 
-### Changed
-- Backup filenames are now generated from a shared helper so manual downloads and Google Drive uploads stay aligned
+### Removed
+- SFTP backup system (`ssh2-sftp-client` dependency and all SFTP config)
 
 ### Setup required
-- Set `BACKUP_ENABLED`, `BACKUP_CRON`, `BACKUP_TIMEZONE`, `GOOGLE_DRIVE_FOLDER_ID`, `GOOGLE_DRIVE_CLIENT_EMAIL`, and `GOOGLE_DRIVE_PRIVATE_KEY`
+- Set `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN`, and optionally `GOOGLE_DRIVE_FOLDER_ID`
+- Run `npx tsx scripts/google-drive-auth.ts` once locally to obtain the refresh token
+
+---
+
+## [0.14.0] — 2026-03-08
+
+### Added
+- Automatic daily SFTP backups with configurable cron schedule
+- Manual "Run SFTP Backup Now" action in Settings
+- `POST /api/backup/sftp/run` endpoint for on-demand SFTP backup uploads
+- GitHub repository link in sidebar footer and login page
+
+### Changed
+- Backup filenames are now generated from a shared helper so manual downloads and uploads stay aligned
 
 ---
 

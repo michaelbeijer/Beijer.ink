@@ -50,7 +50,7 @@ beijer.ink/
 │   │   ├── validators/   # Zod schemas
 │   │   └── lib/          # Prisma client, R2 client, utilities
 │   └── prisma/           # Schema + migrations
-├── scripts/              # Seed password script
+├── scripts/              # Seed password, Google Drive auth setup
 └── Dockerfile            # Multi-stage production build
 ```
 
@@ -134,7 +134,7 @@ All endpoints under `/api`, JWT-protected except login.
 | `PUT` | `/api/scratchpad` | Update scratchpad content |
 | `GET` | `/api/search?q=...` | Full-text search with highlighted snippets |
 | `GET` | `/api/backup/download` | Download all notes as a zip of markdown files |
-| `POST` | `/api/backup/sftp/run` | Run an SFTP backup immediately |
+| `POST` | `/api/backup/google-drive/run` | Upload backup to Google Drive |
 
 ## Deployment (Railway)
 
@@ -144,21 +144,25 @@ All endpoints under `/api`, JWT-protected except login.
 4. Railway will build using the Dockerfile and run migrations on startup
 5. Configure your custom domain in Railway settings
 
-## Daily SFTP Backups
+## Daily Google Drive Backups
 
-You can enable automatic daily backups to an SFTP folder on your own server. The uploaded ZIP uses the same markdown export as the in-app `Download Backup` feature, preserving your notebook folder structure. You can also test the upload from Settings with `Run SFTP Backup Now`.
+Automatic daily backups upload a ZIP of all notes (as markdown files preserving notebook folder structure) to your Google Drive. You can also trigger an upload manually from Settings with "Run Google Drive Backup Now".
 
-Set these environment variables:
-- `BACKUP_ENABLED=true`
-- `BACKUP_CRON=0 2 * * *`
-- `BACKUP_TIMEZONE=Europe/London`
-- `BACKUP_SFTP_HOST=...`
-- `BACKUP_SFTP_PORT=22`
-- `BACKUP_SFTP_USERNAME=...`
-- `BACKUP_SFTP_PASSWORD=...`
-- `BACKUP_SFTP_REMOTE_DIR=/beijer-ink-backups`
+### Setup
 
-Use an encrypted SFTP endpoint on port `22` when your host supports it.
+1. Create an OAuth client (Desktop app) in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) with the Drive API enabled
+2. Run the one-time auth script to get a refresh token:
+   ```bash
+   npx tsx scripts/google-drive-auth.ts
+   ```
+3. Set these environment variables on Railway:
+   - `BACKUP_ENABLED=true`
+   - `BACKUP_CRON=0 2 * * *` (default: 2 AM daily)
+   - `BACKUP_TIMEZONE=Europe/London`
+   - `GOOGLE_DRIVE_CLIENT_ID=...`
+   - `GOOGLE_DRIVE_CLIENT_SECRET=...`
+   - `GOOGLE_DRIVE_REFRESH_TOKEN=...`
+   - `GOOGLE_DRIVE_FOLDER_ID=...` (optional — omit to upload to Drive root)
 
 ## License
 
