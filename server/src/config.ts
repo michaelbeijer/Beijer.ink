@@ -16,9 +16,11 @@ export const config = {
   backupEnabled: envFlag(process.env.BACKUP_ENABLED),
   backupCron: process.env.BACKUP_CRON || '0 2 * * *',
   backupTimezone: process.env.BACKUP_TIMEZONE || 'Europe/London',
-  googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID || '',
-  googleDriveClientEmail: process.env.GOOGLE_DRIVE_CLIENT_EMAIL || '',
-  googleDrivePrivateKey: (process.env.GOOGLE_DRIVE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  backupSftpHost: process.env.BACKUP_SFTP_HOST || '',
+  backupSftpPort: parseInt(process.env.BACKUP_SFTP_PORT || '22', 10),
+  backupSftpUsername: process.env.BACKUP_SFTP_USERNAME || '',
+  backupSftpPassword: process.env.BACKUP_SFTP_PASSWORD || '',
+  backupSftpRemoteDir: process.env.BACKUP_SFTP_REMOTE_DIR || '/beijer-ink-backups',
 
   isDev() {
     return this.nodeEnv === 'development';

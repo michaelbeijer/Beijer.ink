@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CloudUpload, Download, Loader2 } from 'lucide-react';
-import { downloadBackup, runGoogleDriveBackup } from '../../api/backup';
+import { downloadBackup, runSftpBackup } from '../../api/backup';
 
 export function DownloadBackupSection() {
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -22,15 +22,15 @@ export function DownloadBackupSection() {
     }
   }, []);
 
-  const handleRunGoogleDriveBackup = useCallback(async () => {
+  const handleRunSftpBackup = useCallback(async () => {
     setError('');
     setSuccess('');
     setRunLoading(true);
     try {
-      const result = await runGoogleDriveBackup();
-      setSuccess(`Google Drive backup uploaded${result.name ? `: ${result.name}` : ''}`);
+      const result = await runSftpBackup();
+      setSuccess(`SFTP backup uploaded${result.path ? `: ${result.path}` : ''}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload backup to Google Drive');
+      setError(err instanceof Error ? err.message : 'Failed to upload backup to SFTP');
     } finally {
       setRunLoading(false);
     }
@@ -57,7 +57,7 @@ export function DownloadBackupSection() {
       </button>
 
       <button
-        onClick={handleRunGoogleDriveBackup}
+        onClick={handleRunSftpBackup}
         disabled={downloadLoading || runLoading}
         className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left disabled:opacity-50"
       >
@@ -68,9 +68,9 @@ export function DownloadBackupSection() {
         )}
         <div className="flex-1">
           <div className="text-sm font-medium text-slate-900 dark:text-white">
-            {runLoading ? 'Uploading to Google Drive...' : 'Run Google Drive Backup Now'}
+            {runLoading ? 'Uploading via SFTP...' : 'Run SFTP Backup Now'}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">Test the automatic Google Drive backup immediately</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">Test the automatic SFTP backup immediately</div>
         </div>
       </button>
 

@@ -1,13 +1,13 @@
 import cron from 'node-cron';
 import { config } from '../config.js';
 import {
-  canUploadBackupsToGoogleDrive,
-  uploadBackupToGoogleDrive,
-} from './googleDriveBackup.service.js';
+  canUploadBackupsToSftp,
+  uploadBackupToSftp,
+} from './sftpBackup.service.js';
 
 let backupInProgress = false;
 
-export async function runGoogleDriveBackupNow() {
+export async function runSftpBackupNow() {
   if (backupInProgress) {
     throw new Error('A backup is already running.');
   }
@@ -15,9 +15,9 @@ export async function runGoogleDriveBackupNow() {
   backupInProgress = true;
 
   try {
-    return await uploadBackupToGoogleDrive();
+    return await uploadBackupToSftp();
   } catch (error) {
-    console.error('[backup] Google Drive backup failed:', error);
+    console.error('[backup] SFTP backup failed:', error);
     throw error;
   } finally {
     backupInProgress = false;
@@ -26,12 +26,12 @@ export async function runGoogleDriveBackupNow() {
 
 export function startBackupScheduler() {
   if (!config.backupEnabled) {
-    console.log('[backup] Daily Google Drive backup is disabled.');
+    console.log('[backup] Daily SFTP backup is disabled.');
     return;
   }
 
-  if (!canUploadBackupsToGoogleDrive()) {
-    console.warn('[backup] Daily backup is enabled, but Google Drive credentials or folder ID are missing.');
+  if (!canUploadBackupsToSftp()) {
+    console.warn('[backup] Daily backup is enabled, but SFTP credentials or remote directory are missing.');
     return;
   }
 
@@ -41,16 +41,16 @@ export function startBackupScheduler() {
   }
 
   cron.schedule(config.backupCron, () => {
-    void runGoogleDriveBackupNow()
+    void runSftpBackupNow()
       .then((result) => {
-        console.log(`[backup] Uploaded ${result.name ?? 'backup archive'} to Google Drive.`);
+        console.log(`[backup] Uploaded ${result.name} to SFTP path ${result.path}.`);
       })
       .catch(() => {
-        // Error already logged in runGoogleDriveBackupNow.
+        // Error already logged in runSftpBackupNow.
       });
   }, {
     timezone: config.backupTimezone,
   });
 
-  console.log(`[backup] Daily Google Drive backup scheduled with '${config.backupCron}' in ${config.backupTimezone}.`);
+  console.log(`[backup] Daily SFTP backup scheduled with '${config.backupCron}' in ${config.backupTimezone}.`);
 }
