@@ -7,7 +7,28 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.15.0**
+Current Version: **0.16.0**
+
+---
+
+## [0.16.0] — 2026-03-09
+
+### Added
+- **Multi-theme system** — 5 themes: Light, Dark, Rose (warm cream/terracotta), Lavender (cool purple), and Mint (green/teal)
+- **Theme picker** — Popover in sidebar footer with color swatches for each theme; replaces the old light/dark toggle
+- **CSS custom property architecture** — ~40 semantic color tokens (`bg-surface`, `text-ink`, `border-edge`, `text-accent`, etc.) power all 5 themes via Tailwind CSS 4's `@theme` directive
+- **Per-theme CodeMirror syntax highlighting** — Each theme has its own syntax color palette for the markdown editor
+- **Tree-structured "Move to" submenu** — Notebook context menus now show the full notebook hierarchy with indentation
+- **Indent guide midpoint stops** — Dashed guide lines stop at the vertical center of the last item at each depth level
+
+### Changed
+- All 23 component files refactored from `dark:` class pairs to single semantic token classes, simplifying every component
+- Theme preference stored as `data-theme` attribute on `<html>` instead of a `.dark` class
+- `ThemeContext` exports `setTheme(theme)` instead of `toggleTheme()`
+
+### Removed
+- `@custom-variant dark` directive and all `dark:` CSS class usage
+- Sun/Moon toggle button from sidebar footer
 
 ---
 
