@@ -10,9 +10,10 @@ export function getBackupFilename(date = new Date()): string {
 }
 
 export async function createBackupArchive() {
-  const [notebooks, notes] = await Promise.all([
+  const [notebooks, notes, scratchpad] = await Promise.all([
     prisma.notebook.findMany({ select: { id: true, name: true, parentId: true } }),
     prisma.note.findMany({ select: { title: true, content: true, notebookId: true } }),
+    prisma.scratchpad.findFirst({ select: { content: true } }),
   ]);
 
   // Build notebook ID -> folder path map.
@@ -62,6 +63,11 @@ export async function createBackupArchive() {
     const fileName = uniqueName(dir, baseName);
     const filePath = dir ? `${dir}/${fileName}.md` : `${fileName}.md`;
     archive.append(note.content, { name: filePath });
+  }
+
+  // Add scratchpad as a file at the root.
+  if (scratchpad?.content) {
+    archive.append(scratchpad.content, { name: 'Scratchpad.md' });
   }
 
   archive.finalize();
