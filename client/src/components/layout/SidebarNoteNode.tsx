@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { FlatNoteNode } from '../../utils/flattenNotebookTree';
 import type { Notebook } from '../../types/notebook';
+import { sortNotebooksTree } from '../../utils/sortNotebooksTree';
 
 interface SidebarNoteNodeProps {
   node: FlatNoteNode;
@@ -124,18 +125,19 @@ export function SidebarNoteNode({
                     <Folder className="w-3 h-3" />
                     <span>Root level</span>
                   </button>
-                  {moveTargets.map((nb) => (
+                  {sortNotebooksTree(moveTargets).map(({ notebook: target, depth }) => (
                     <button
-                      key={nb.id}
-                      className="flex items-center gap-2 w-full pl-5 pr-3 py-1 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      key={target.id}
+                      className="flex items-center gap-2 w-full pr-3 py-1 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      style={{ paddingLeft: `${depth * 12 + 20}px` }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onMoveToNotebook(node.noteId, nb.id);
+                        onMoveToNotebook(node.noteId, target.id);
                         onContextMenu(null);
                       }}
                     >
                       <Folder className="w-3 h-3" />
-                      <span className="truncate">{nb.name}</span>
+                      <span className="truncate">{target.name}</span>
                     </button>
                   ))}
                 </div>

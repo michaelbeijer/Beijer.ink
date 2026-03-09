@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { NoteSummary } from '../../types/note';
 import type { Notebook } from '../../types/notebook';
+import { sortNotebooksTree } from '../../utils/sortNotebooksTree';
 
 interface SidebarRootNoteProps {
   note: NoteSummary;
@@ -88,18 +89,19 @@ export function SidebarRootNote({
             {showMoveSubmenu && (
               <div className="border-t border-slate-100 dark:border-slate-700 mx-2 my-0.5">
                 <div className="max-h-48 overflow-y-auto py-0.5">
-                  {notebooks.map((nb) => (
+                  {sortNotebooksTree(notebooks).map(({ notebook: target, depth }) => (
                     <button
-                      key={nb.id}
-                      className="flex items-center gap-2 w-full pl-5 pr-3 py-1 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      key={target.id}
+                      className="flex items-center gap-2 w-full pr-3 py-1 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      style={{ paddingLeft: `${depth * 12 + 20}px` }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onMoveToNotebook(note.id, nb.id);
+                        onMoveToNotebook(note.id, target.id);
                         onContextMenu(null);
                       }}
                     >
                       <Folder className="w-3 h-3" />
-                      <span className="truncate">{nb.name}</span>
+                      <span className="truncate">{target.name}</span>
                     </button>
                   ))}
                 </div>

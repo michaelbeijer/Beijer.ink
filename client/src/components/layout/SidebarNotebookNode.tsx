@@ -15,6 +15,7 @@ import {
 import type { FlatNotebookNode } from '../../utils/flattenNotebookTree';
 import type { Notebook } from '../../types/notebook';
 import { isDescendant } from '../../utils/isDescendant';
+import { sortNotebooksTree } from '../../utils/sortNotebooksTree';
 
 interface SidebarNotebookNodeProps {
   node: FlatNotebookNode;
@@ -220,14 +221,15 @@ export function SidebarNotebookNode({
                     {nb.parentId === null && <span className="text-[10px] text-slate-400 ml-auto">(current)</span>}
                   </button>
 
-                  {moveTargets.map((target) => (
+                  {sortNotebooksTree(moveTargets).map(({ notebook: target, depth }) => (
                     <button
                       key={target.id}
-                      className={`flex items-center gap-2 w-full pl-5 pr-3 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                      className={`flex items-center gap-2 w-full pr-3 py-1 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${
                         nb.parentId === target.id
                           ? 'text-slate-400 dark:text-slate-500'
                           : 'text-slate-600 dark:text-slate-300'
                       }`}
+                      style={{ paddingLeft: `${depth * 12 + 20}px` }}
                       disabled={nb.parentId === target.id}
                       onClick={(e) => {
                         e.stopPropagation();
