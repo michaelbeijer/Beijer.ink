@@ -31,16 +31,17 @@ export async function downloadBackup(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export interface SftpBackupResult {
+export interface GoogleDriveBackupResult {
+  id?: string | null;
   name?: string | null;
-  path?: string | null;
+  webViewLink?: string | null;
 }
 
-export async function runSftpBackup(): Promise<SftpBackupResult> {
+export async function runGoogleDriveBackup(): Promise<GoogleDriveBackupResult> {
   try {
-    const { data } = await api.post<SftpBackupResult>('/backup/sftp/run');
+    const { data } = await api.post<GoogleDriveBackupResult>('/backup/google-drive/run');
     return data;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error, 'Failed to upload backup to SFTP'));
+    throw new Error(getApiErrorMessage(error, 'Failed to upload backup to Google Drive'));
   }
 }

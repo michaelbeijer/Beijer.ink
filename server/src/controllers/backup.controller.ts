@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as backupService from '../services/backup.service.js';
-import { canUploadBackupsToSftp } from '../services/sftpBackup.service.js';
-import { runSftpBackupNow } from '../services/backupScheduler.service.js';
+import { canUploadBackupsToGoogleDrive } from '../services/googleDriveBackup.service.js';
+import { runGoogleDriveBackupNow } from '../services/backupScheduler.service.js';
 
 export async function downloadBackup(_req: Request, res: Response) {
   res.set({
@@ -13,17 +13,18 @@ export async function downloadBackup(_req: Request, res: Response) {
   archive.pipe(res);
 }
 
-export async function runSftpBackup(_req: Request, res: Response) {
-  if (!canUploadBackupsToSftp()) {
+export async function runGoogleDriveBackup(_req: Request, res: Response) {
+  if (!canUploadBackupsToGoogleDrive()) {
     res.status(400).json({
-      error: 'SFTP backup is not fully configured yet.',
+      error: 'Google Drive backup is not fully configured yet.',
     });
     return;
   }
 
-  const result = await runSftpBackupNow();
+  const result = await runGoogleDriveBackupNow();
   res.status(201).json({
+    id: result.id,
     name: result.name,
-    path: result.path,
+    webViewLink: result.webViewLink,
   });
 }
