@@ -40,29 +40,31 @@ export async function uploadBackupToSftp(runDate = new Date()) {
   const remotePath = path.posix.join(config.backupSftpRemoteDir, fileName);
 
   const sftp = new SftpClient();
+  const handleKeyboardInteractive = (
+    _name: string,
+    _instructions: string,
+    _lang: string,
+    prompts: Array<{ prompt: string; echo: boolean }>,
+    finish: (responses: string[]) => void,
+  ) => {
+    if (prompts.length === 0) {
+      finish([]);
+      return;
+    }
+
+    // Some shared hosts expose password auth via keyboard-interactive prompts.
+    finish(prompts.map(() => config.backupSftpPassword));
+  };
 
   try {
-    const connectionOptions: any = {
+    sftp.on('keyboard-interactive', handleKeyboardInteractive);
+
+    const connectionOptions = {
       host: config.backupSftpHost,
       port: config.backupSftpPort,
       username: config.backupSftpUsername,
       password: config.backupSftpPassword,
       tryKeyboard: true,
-      onKeyboardInteractive: (
-        _name: string,
-        _instructions: string,
-        _lang: string,
-        prompts: Array<{ prompt: string; echo: boolean }>,
-        finish: (responses: string[]) => void,
-      ) => {
-        if (prompts.length === 0) {
-          finish([]);
-          return;
-        }
-
-        // Some shared hosts expose password auth via keyboard-interactive prompts.
-        finish(prompts.map(() => config.backupSftpPassword));
-      },
       readyTimeout: 20000,
     };
 
@@ -79,6 +81,7 @@ export async function uploadBackupToSftp(runDate = new Date()) {
     await sftp.end().catch(() => undefined);
   }
 }
+
 
 
 
