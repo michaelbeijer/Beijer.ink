@@ -346,7 +346,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
         {hasFavourites && (
           <>
             <div className="mb-1 px-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-section-label">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
                 Favourites
               </span>
             </div>
