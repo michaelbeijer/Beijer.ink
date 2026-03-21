@@ -22,11 +22,13 @@ A personal note-taking web app with inline markdown styling, full-text search, a
 - **Fullscreen mode** — Expand the editor to fill the entire page; exit with Escape
 - **Global search** — Weighted PostgreSQL FTS across all notes (title boosted over content), with highlighted result snippets
 - **Notebooks** — Organize notes in a hierarchical tree with right-click context menu for moving, renaming, and creating sub-notebooks
+- **Favourites** — Pin folders or notes to a dedicated section at the top of the sidebar for quick access
+- **Drag-and-drop** — Move notes and folders in and out of other folders directly in the sidebar tree
 - **Root notes** — Create notes outside of any notebook; they appear in the sidebar below the notebook tree and open directly in the editor
 - **Scratchpad** — Instant-access editor on app load for quick jotting; auto-saved and always available
 - **Auto-save** — 1-second debounce, saves in the background
 - **Responsive layout** — 3-column desktop, 2-column tablet, single-column mobile with bottom navigation
-- **Light/Dark mode** — Toggle between light and dark themes, preference saved across sessions
+- **5 themes** — Light, Dark, Rose, Lavender, and Mint; preference saved across sessions
 - **PWA** — Installable on Android via "Add to Home Screen"
 
 ## Project Structure

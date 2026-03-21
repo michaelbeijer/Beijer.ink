@@ -7,7 +7,21 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.16.0**
+Current Version: **0.17.0**
+
+---
+
+## [0.17.0] — 2026-03-21
+
+### Added
+- **Favourites** — Pin folders or notes to a new "Favourites" section at the top of the sidebar via right-click context menu; unpin with "Remove from Favourites"
+- **Sidebar drag-and-drop** — Notes and folders can now be dragged in and out of folders directly in the sidebar tree, with drop indicators showing where items will land
+- **Section headings** — Sidebar now shows colour-coded "Favourites", "Folders", and "Notes" headings to visually separate the three areas
+- **`isFavorite` fields** — Added to both Note and Notebook database models to persist pin state
+
+### Changed
+- "Notes" heading now always appears above root-level notes (previously only shown when folders also existed)
+- All user-facing strings use UK English spelling ("Favourites")
 
 ---
 
