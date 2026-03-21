@@ -41,6 +41,10 @@
   --color-caret: var(--t-caret);
   --color-link: var(--t-link);
   --color-strikethrough: var(--t-strikethrough);
+  --color-fav-text: var(--t-fav-text);
+  --color-section-fav: var(--t-section-fav);
+  --color-section-folders: var(--t-section-folders);
+  --color-section-notes: var(--t-section-notes);
 }
 
 /* ── Light theme (default) ── */
@@ -85,6 +89,10 @@
   --t-caret: #3b82f6;
   --t-link: #2563eb;
   --t-strikethrough: #94a3b8;
+  --t-fav-text: #a08520;
+  --t-section-fav: #b8960f;
+  --t-section-folders: #2563eb;
+  --t-section-notes: #16a34a;
 }
 
 /* ── Dark theme ── */
@@ -128,6 +136,10 @@
   --t-caret: #60a5fa;
   --t-link: #60a5fa;
   --t-strikethrough: #64748b;
+  --t-fav-text: #e2c87a;
+  --t-section-fav: #e2c87a;
+  --t-section-folders: #60a5fa;
+  --t-section-notes: #4ade80;
 }
 
 /* ── Rose theme ── */
@@ -171,6 +183,10 @@
   --t-caret: #c2705a;
   --t-link: #c2705a;
   --t-strikethrough: #bfa892;
+  --t-fav-text: #b89830;
+  --t-section-fav: #b89830;
+  --t-section-folders: #c2705a;
+  --t-section-notes: #27ae60;
 }
 
 /* ── Lavender theme ── */
@@ -214,6 +230,10 @@
   --t-caret: #7c5cbf;
   --t-link: #7c5cbf;
   --t-strikethrough: #9e96b0;
+  --t-fav-text: #b89830;
+  --t-section-fav: #b89830;
+  --t-section-folders: #7c5cbf;
+  --t-section-notes: #27ae60;
 }
 
 /* ── Mint theme ── */
@@ -257,6 +277,10 @@
   --t-caret: #2d8a5e;
   --t-link: #2d8a5e;
   --t-strikethrough: #8aab98;
+  --t-fav-text: #a08520;
+  --t-section-fav: #a08520;
+  --t-section-folders: #2d8a5e;
+  --t-section-notes: #2563eb;
 }
 
 /* Scale up all rem-based sizing on small screens */

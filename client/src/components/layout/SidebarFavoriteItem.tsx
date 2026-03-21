@@ -52,7 +52,7 @@ export function SidebarFavoriteItem({
       ) : (
         <FileText className="w-4 h-4 shrink-0 text-ink-faint" />
       )}
-      <span className="flex-1 text-sm truncate">{name}</span>
+      <span className="flex-1 text-sm truncate text-fav-text">{name}</span>
 
       <div className="relative">
         <button

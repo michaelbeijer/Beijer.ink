@@ -346,7 +346,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
         {hasFavorites && (
           <>
             <div className="mb-1 px-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-ink-dim">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-section-fav">
                 Favorites
               </span>
             </div>
@@ -385,6 +385,14 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
             ))}
             <div className="my-1.5" />
           </>
+        )}
+
+        {flatNodes.length > 0 && (
+          <div className="mb-1 px-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-section-folders">
+              Folders
+            </span>
+          </div>
         )}
 
         {flatNodes.map((node, i) => {
@@ -469,13 +477,11 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
         {/* Root notes */}
         {rootNotes.length > 0 && (
           <>
-            {notebooks.length > 0 && (
-              <div className="mt-2 mb-1 px-2">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-ink-dim">
-                  Notes
-                </span>
-              </div>
-            )}
+            <div className="mt-2 mb-1 px-2">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-section-notes">
+                Notes
+              </span>
+            </div>
             {rootNotes.map((note) => (
               <SidebarRootNote
                 key={note.id}
