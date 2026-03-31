@@ -35,7 +35,7 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       TableRow,
       TableCell,
       TableHeader,
-      Link.configure({ openOnClick: false, autolink: true }),
+      Link.configure({ openOnClick: false, autolink: false }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       Underline,
       TaskList,
