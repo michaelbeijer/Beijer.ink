@@ -139,6 +139,13 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
     setBlocksVersion((v) => v + 1); // Force re-render so useMemo picks up new blocks
   }, [content]);
 
+  // Auto-activate the first block once blocks are parsed and editor is ready
+  useEffect(() => {
+    if (editor && blocksRef.current.length > 0 && activeIndexRef.current < 0) {
+      activateBlockRef.current(0);
+    }
+  }, [editor, blocksVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Deactivate the current block and serialize its content back
   const deactivateBlock = useCallback(() => {
     if (!editor) return;
