@@ -536,3 +536,46 @@
   padding-left: 8px;
   margin-left: -10px;
 }
+
+/* ── Table of Contents panel ── */
+.toc-panel {
+  width: 200px;
+  min-width: 200px;
+  border-right: 1px solid var(--t-border);
+  overflow-y: auto;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.toc-header {
+  padding: 4px 12px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--t-ink-faint);
+}
+
+.toc-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 3px 12px;
+  font-size: 13px;
+  color: var(--t-ink-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: background-color 0.1s;
+}
+
+.toc-item:hover {
+  background-color: var(--t-hover);
+  color: var(--t-ink);
+}
+
+.toc-level-2 { padding-left: 24px; }
+.toc-level-3 { padding-left: 36px; }

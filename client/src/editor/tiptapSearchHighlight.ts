@@ -27,17 +27,21 @@ function findMatches(doc: ProseMirrorNode, query: string) {
   if (!query) return matches;
 
   const lowerQuery = query.toLowerCase();
-  const text = doc.textBetween(0, doc.content.size, '\n', '\0');
-  const lowerText = text.toLowerCase();
 
-  let pos = 0;
-  while (pos < lowerText.length) {
-    const idx = lowerText.indexOf(lowerQuery, pos);
-    if (idx === -1) break;
-    // +1 because ProseMirror positions are 1-indexed (doc starts at 0, content at 1)
-    matches.push({ from: idx + 1, to: idx + 1 + query.length });
-    pos = idx + 1;
-  }
+  // Walk all text nodes to get correct ProseMirror positions.
+  // textBetween() strips node boundaries so char indices don't map to PM positions.
+  doc.descendants((node, pos) => {
+    if (!node.isText || !node.text) return;
+
+    const text = node.text.toLowerCase();
+    let idx = 0;
+    while (idx < text.length) {
+      const found = text.indexOf(lowerQuery, idx);
+      if (found === -1) break;
+      matches.push({ from: pos + found, to: pos + found + query.length });
+      idx = found + 1;
+    }
+  });
 
   return matches;
 }

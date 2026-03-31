@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type } from 'lucide-react';
+import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type, ListTree } from 'lucide-react';
 import { EditorContent } from '@tiptap/react';
 import type { Editor } from '@tiptap/react';
 
@@ -11,8 +11,11 @@ import { useTiptap } from '../../hooks/useTiptap';
 import { TiptapToolbar } from './TiptapToolbar';
 import { SearchHighlightBar } from './SearchHighlightBar';
 import { BlockEditor } from './BlockEditor';
+import { TableOfContents } from './TableOfContents';
+import { splitBlocks } from '../../utils/blockParser';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
+const TOC_KEY = 'beijer-ink-toc';
 const BLOCK_MODE_THRESHOLD = 50_000;
 
 interface NoteEditorProps {
@@ -32,11 +35,17 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   saveRef.current = save;
   const [charCount, setCharCount] = useState(0);
   const [showToolbar, setShowToolbar] = useState(() => {
-    return localStorage.getItem(TOOLBAR_KEY) === 'true';
+    const stored = localStorage.getItem(TOOLBAR_KEY);
+    return stored === null ? true : stored === 'true';
+  });
+  const [showToc, setShowToc] = useState(() => {
+    const stored = localStorage.getItem(TOC_KEY);
+    return stored === null ? false : stored === 'true';
   });
   const [searchBar, setSearchBar] = useState<{ query: string; matchCount: number; currentIndex: number } | null>(null);
   const pendingSearchRef = useRef<string | null>(null);
   const [blockEditor, setBlockEditor] = useState<Editor | null>(null);
+  const activateBlockRef = useRef<((index: number) => void) | null>(null);
 
   const handleChange = useCallback(
     (html: string) => {
@@ -177,6 +186,24 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     });
   }, []);
 
+  const toggleToc = useCallback(() => {
+    setShowToc((prev) => {
+      const next = !prev;
+      localStorage.setItem(TOC_KEY, String(next));
+      return next;
+    });
+  }, []);
+
+  // Parse blocks for TOC in block mode
+  const tocBlocks = useMemo(() => {
+    if (!isLargeNote || !note?.content) return undefined;
+    return splitBlocks(note.content);
+  }, [isLargeNote, note?.content]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTocBlockClick = useCallback((blockIndex: number) => {
+    activateBlockRef.current?.(blockIndex);
+  }, []);
+
   const handleDismissSearch = useCallback(() => {
     clearSearch();
     blockEditor?.commands.clearSearchQuery();
@@ -203,6 +230,17 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
         <div className="mr-auto" />
 
         {/* Right-side actions */}
+        <button
+          onClick={toggleToc}
+          className={`p-1.5 rounded transition-colors ${
+            showToc
+              ? 'text-accent bg-accent/10'
+              : 'text-ink-faint hover:text-ink hover:bg-hover'
+          }`}
+          title={showToc ? 'Hide table of contents' : 'Show table of contents'}
+        >
+          <ListTree className="w-4 h-4" />
+        </button>
         <button
           onClick={toggleToolbar}
           className={`p-1.5 rounded transition-colors ${
@@ -272,11 +310,21 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           />
         )}
 
+        {/* Table of contents */}
+        {showToc && (
+          <TableOfContents
+            editor={isLargeNote ? null : editor}
+            blocks={tocBlocks}
+            onBlockClick={handleTocBlockClick}
+          />
+        )}
+
         {isLargeNote ? (
           <BlockEditor
             content={note?.content || ''}
             onChange={handleChange}
             onEditorReady={setBlockEditor}
+            onActivateBlockRef={(ref) => { activateBlockRef.current = ref; }}
             placeholder="Start writing..."
             searchQuery={searchBar?.query}
             onSearchResult={(matchCount) => {

@@ -20,12 +20,13 @@ interface BlockEditorProps {
   content: string;
   onChange: (html: string) => void;
   onEditorReady?: (editor: Editor | null) => void;
+  onActivateBlockRef?: (ref: (index: number) => void) => void;
   placeholder?: string;
   searchQuery?: string | null;
   onSearchResult?: (matchCount: number) => void;
 }
 
-export function BlockEditor({ content, onChange, onEditorReady, placeholder, searchQuery, onSearchResult }: BlockEditorProps) {
+export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockRef, placeholder, searchQuery, onSearchResult }: BlockEditorProps) {
   const blocksRef = useRef<Block[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const activeIndexRef = useRef(-1);
@@ -225,6 +226,11 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder, sea
 
   // Keep the ref in sync for the keyboard extension
   activateBlockRef.current = activateBlock;
+
+  // Expose activateBlock to parent (for TOC navigation)
+  useEffect(() => {
+    onActivateBlockRef?.(activateBlock);
+  }, [activateBlock, onActivateBlockRef]);
 
   // Compute before/after HTML
   const { beforeHtml, afterHtml } = useMemo(() => {
