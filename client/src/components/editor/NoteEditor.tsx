@@ -39,9 +39,12 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
       // User started typing — clear search highlights
       setSearchBar(null);
       if (!isLoadingRef.current) {
-        const plainText = editorRef.current?.getText() ?? '';
-        setCharCount(plainText.length);
-        const firstLine = plainText.split('\n')[0]?.trim() || 'Untitled';
+        // Extract title from HTML cheaply (no full doc traversal)
+        const titleMatch = html.match(/<(?:h[1-6]|p)[^>]*>(.*?)<\/(?:h[1-6]|p)>/);
+        const firstLine = titleMatch
+          ? titleMatch[1].replace(/<[^>]+>/g, '').trim() || 'Untitled'
+          : 'Untitled';
+        setCharCount(html.length);
         queryClient.setQueriesData<NoteSummary[]>(
           { queryKey: ['notes'] },
           (old) =>
@@ -121,7 +124,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     if (note && editor) {
       isLoadingRef.current = true;
       setContent(note.content || '');
-      setCharCount(editor.getText().length);
+      setCharCount((note.content || '').length);
       isLoadingRef.current = false;
 
       // Apply pending search after document is set

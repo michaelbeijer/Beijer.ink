@@ -42,6 +42,10 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       TaskItem.configure({ nested: true }),
       SearchHighlight,
     ],
+    // Prevent React re-renders on every transaction (cursor move, selection, etc.)
+    // This is critical for large documents — without it, React re-renders the
+    // entire component tree on every keystroke/selection change.
+    shouldRerenderOnTransaction: false,
     onUpdate: ({ editor: ed }) => {
       if (suppressRef.current) return;
       // Debounce the expensive getHTML() serialization
