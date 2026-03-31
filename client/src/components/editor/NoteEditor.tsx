@@ -119,16 +119,18 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     });
   }
 
-  // Load note content into Tiptap
+  // Load note content into Tiptap (deferred so UI chrome renders first)
   useEffect(() => {
     if (note && editor) {
       isLoadingRef.current = true;
-      setContent(note.content || '');
-      setCharCount((note.content || '').length);
-      isLoadingRef.current = false;
-
-      // Apply pending search after document is set
-      applyPendingSearch();
+      // Yield to browser so toolbar/chrome paints before heavy content parsing
+      const id = requestAnimationFrame(() => {
+        setContent(note.content || '');
+        setCharCount((note.content || '').length);
+        isLoadingRef.current = false;
+        applyPendingSearch();
+      });
+      return () => cancelAnimationFrame(id);
     }
   }, [note, editor, setContent]); // eslint-disable-line react-hooks/exhaustive-deps
 

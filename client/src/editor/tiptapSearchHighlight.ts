@@ -9,9 +9,18 @@ export interface SearchHighlightState {
   currentIndex: number;
 }
 
-const emptyState: SearchHighlightState = { query: '', matches: [], currentIndex: -1 };
+interface PluginState extends SearchHighlightState {
+  decorationSet: DecorationSet;
+}
 
-const searchPluginKey = new PluginKey<SearchHighlightState>('searchHighlight');
+const emptyState: PluginState = {
+  query: '',
+  matches: [],
+  currentIndex: -1,
+  decorationSet: DecorationSet.empty,
+};
+
+const searchPluginKey = new PluginKey<PluginState>('searchHighlight');
 
 function findMatches(doc: ProseMirrorNode, query: string) {
   const matches: { from: number; to: number }[] = [];
@@ -33,6 +42,16 @@ function findMatches(doc: ProseMirrorNode, query: string) {
   return matches;
 }
 
+function buildDecorations(doc: ProseMirrorNode, matches: { from: number; to: number }[], currentIndex: number): DecorationSet {
+  if (matches.length === 0) return DecorationSet.empty;
+  const decorations = matches.map((m, i) =>
+    Decoration.inline(m.from, m.to, {
+      class: i === currentIndex ? 'tiptap-search-match-active' : 'tiptap-search-match',
+    })
+  );
+  return DecorationSet.create(doc, decorations);
+}
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     searchHighlight: {
@@ -47,7 +66,7 @@ export const SearchHighlight = Extension.create({
   name: 'searchHighlight',
 
   addStorage() {
-    return { ...emptyState };
+    return { query: '', matches: [] as { from: number; to: number }[], currentIndex: -1 };
   },
 
   addCommands() {
@@ -77,7 +96,7 @@ export const SearchHighlight = Extension.create({
     const extensionThis = this;
 
     return [
-      new Plugin<SearchHighlightState>({
+      new Plugin<PluginState>({
         key: searchPluginKey,
 
         state: {
@@ -85,18 +104,23 @@ export const SearchHighlight = Extension.create({
             return { ...emptyState };
           },
 
-          apply(tr, state) {
+          apply(tr, prev) {
             const meta = tr.getMeta(searchPluginKey);
 
             if (meta?.type === 'setQuery') {
               const query = meta.query as string;
-              if (!query) return { ...emptyState };
+              if (!query) {
+                extensionThis.storage.query = '';
+                extensionThis.storage.matches = [];
+                extensionThis.storage.currentIndex = -1;
+                return { ...emptyState };
+              }
               const matches = findMatches(tr.doc, query);
-              const newState = { query, matches, currentIndex: matches.length > 0 ? 0 : -1 };
-              extensionThis.storage.query = newState.query;
-              extensionThis.storage.matches = newState.matches;
-              extensionThis.storage.currentIndex = newState.currentIndex;
-              return newState;
+              const currentIndex = matches.length > 0 ? 0 : -1;
+              extensionThis.storage.query = query;
+              extensionThis.storage.matches = matches;
+              extensionThis.storage.currentIndex = currentIndex;
+              return { query, matches, currentIndex, decorationSet: buildDecorations(tr.doc, matches, currentIndex) };
             }
 
             if (meta?.type === 'clear') {
@@ -107,35 +131,32 @@ export const SearchHighlight = Extension.create({
             }
 
             if (meta?.type === 'setIndex') {
-              const newState = { ...state, currentIndex: meta.index as number };
-              extensionThis.storage.currentIndex = newState.currentIndex;
-              return newState;
+              const currentIndex = meta.index as number;
+              extensionThis.storage.currentIndex = currentIndex;
+              // Rebuild decorations only for the index change (different active class)
+              return {
+                ...prev,
+                currentIndex,
+                decorationSet: buildDecorations(tr.doc, prev.matches, currentIndex),
+              };
             }
 
             // If the document changed, clear search
-            if (tr.docChanged && state.query) {
+            if (tr.docChanged && prev.query) {
               extensionThis.storage.query = '';
               extensionThis.storage.matches = [];
               extensionThis.storage.currentIndex = -1;
               return { ...emptyState };
             }
 
-            return state;
+            // No change — return the cached state as-is (no DecorationSet rebuild)
+            return prev;
           },
         },
 
         props: {
           decorations(editorState) {
-            const state = searchPluginKey.getState(editorState);
-            if (!state || state.matches.length === 0) return DecorationSet.empty;
-
-            const decorations = state.matches.map((m, i) =>
-              Decoration.inline(m.from, m.to, {
-                class: i === state.currentIndex ? 'tiptap-search-match-active' : 'tiptap-search-match',
-              })
-            );
-
-            return DecorationSet.create(editorState.doc, decorations);
+            return searchPluginKey.getState(editorState)?.decorationSet ?? DecorationSet.empty;
           },
         },
       }),

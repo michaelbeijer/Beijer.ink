@@ -26,6 +26,8 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
   const suppressRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const idleRef = useRef<number>(0);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -51,15 +53,25 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       // Debounce the expensive getHTML() serialization
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        onChangeRef.current(ed.getHTML());
+        // Serialize during browser idle time so it doesn't block user input
+        if ('requestIdleCallback' in window) {
+          if (idleRef.current) cancelIdleCallback(idleRef.current);
+          idleRef.current = requestIdleCallback(
+            () => onChangeRef.current(ed.getHTML()),
+            { timeout: 2000 }
+          );
+        } else {
+          onChangeRef.current(ed.getHTML());
+        }
       }, DEBOUNCE_MS);
     },
   });
 
-  // Cleanup debounce timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (idleRef.current && 'cancelIdleCallback' in window) cancelIdleCallback(idleRef.current);
     };
   }, []);
 
@@ -68,6 +80,7 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       if (!editor) return;
       // Cancel any pending debounced save from the previous note
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (idleRef.current && 'cancelIdleCallback' in window) cancelIdleCallback(idleRef.current);
       suppressRef.current = true;
       editor.commands.setContent(html);
       suppressRef.current = false;

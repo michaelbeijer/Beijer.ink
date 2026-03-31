@@ -11,8 +11,7 @@ export function Scratchpad() {
   const lastSavedRef = useRef<string>('');
 
   const handleChange = useCallback((html: string) => {
-    const len = editorRef.current?.getText().length ?? 0;
-    setCharCount(len);
+    setCharCount(html.length);
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
@@ -43,7 +42,7 @@ export function Scratchpad() {
   useEffect(() => {
     if (data && editor) {
       setContent(data.content);
-      setCharCount(editor.getText().length);
+      setCharCount((data.content || '').length);
       lastSavedRef.current = data.content;
     }
   }, [data, editor, setContent]);

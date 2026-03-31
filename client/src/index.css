@@ -306,6 +306,26 @@
   font-size: 15px;
   outline: none;
   min-height: 100%;
+  /* Isolate layout/paint so edits don't trigger full-page reflow */
+  contain: style layout;
+}
+
+/* Skip rendering for off-screen blocks — crucial for large documents.
+   The browser only paints blocks near the viewport, dramatically reducing
+   layout/paint cost for documents with thousands of paragraphs. */
+.tiptap-editor .ProseMirror > p,
+.tiptap-editor .ProseMirror > h1,
+.tiptap-editor .ProseMirror > h2,
+.tiptap-editor .ProseMirror > h3,
+.tiptap-editor .ProseMirror > ul,
+.tiptap-editor .ProseMirror > ol,
+.tiptap-editor .ProseMirror > blockquote,
+.tiptap-editor .ProseMirror > pre,
+.tiptap-editor .ProseMirror > hr,
+.tiptap-editor .ProseMirror > table,
+.tiptap-editor .ProseMirror > div {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 2.5em;
 }
 
 .tiptap-editor .ProseMirror ::selection {
