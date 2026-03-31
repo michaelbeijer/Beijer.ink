@@ -111,6 +111,13 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     const query = pendingSearchRef.current;
     if (!query) return;
     pendingSearchRef.current = null;
+
+    if (isLargeNote) {
+      // For block mode: just set the search bar — BlockEditor handles highlighting
+      setSearchBar({ query, matchCount: 0, currentIndex: -1 });
+      return;
+    }
+
     queueMicrotask(() => {
       setSearch(query);
       const state = getSearchState();
@@ -139,9 +146,10 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
       });
       return () => cancelAnimationFrame(id);
     }
-    // For large notes, just set char count
+    // For large notes, just set char count and apply pending search
     if (note && isLargeNote) {
       setCharCount((note.content || '').length);
+      applyPendingSearch();
     }
   }, [note, editor, setContent, isLargeNote]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -171,9 +179,10 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
 
   const handleDismissSearch = useCallback(() => {
     clearSearch();
+    blockEditor?.commands.clearSearchQuery();
     setSearchBar(null);
     onClearSearch?.();
-  }, [clearSearch, onClearSearch]);
+  }, [clearSearch, blockEditor, onClearSearch]);
 
   const handleNextMatch = useCallback(() => {
     nextMatch();
@@ -251,8 +260,8 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
 
       {/* Editor area */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">
-        {/* Search highlight bar (hidden in block mode) */}
-        {searchBar && !isLargeNote && (
+        {/* Search highlight bar */}
+        {searchBar && (
           <SearchHighlightBar
             query={searchBar.query}
             matchCount={searchBar.matchCount}
@@ -269,6 +278,12 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
             onChange={handleChange}
             onEditorReady={setBlockEditor}
             placeholder="Start writing..."
+            searchQuery={searchBar?.query}
+            onSearchResult={(matchCount) => {
+              setSearchBar((prev) =>
+                prev ? { ...prev, matchCount, currentIndex: matchCount > 0 ? 0 : -1 } : null
+              );
+            }}
           />
         ) : (
           <div className="tiptap-editor w-full min-h-0 overflow-auto">

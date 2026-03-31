@@ -12,6 +12,7 @@ import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import type { Editor } from '@tiptap/react';
 import { splitBlocks, joinBlocks, type Block } from '../../utils/blockParser';
+import { SearchHighlight, getSearchPluginKey } from '../../editor/tiptapSearchHighlight';
 
 const DEBOUNCE_MS = 300;
 
@@ -20,9 +21,11 @@ interface BlockEditorProps {
   onChange: (html: string) => void;
   onEditorReady?: (editor: Editor | null) => void;
   placeholder?: string;
+  searchQuery?: string | null;
+  onSearchResult?: (matchCount: number) => void;
 }
 
-export function BlockEditor({ content, onChange, onEditorReady, placeholder }: BlockEditorProps) {
+export function BlockEditor({ content, onChange, onEditorReady, placeholder, searchQuery, onSearchResult }: BlockEditorProps) {
   const blocksRef = useRef<Block[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const activeIndexRef = useRef(-1);
@@ -88,6 +91,7 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
       Underline,
       TaskList,
       TaskItem.configure({ nested: true }),
+      SearchHighlight,
       blockNavExtension,
     ],
     shouldRerenderOnTransaction: false,
@@ -145,6 +149,45 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
       activateBlockRef.current(0);
     }
   }, [editor, blocksVersion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle search query: find the block containing the match, activate it, highlight
+  useEffect(() => {
+    if (!editor || !searchQuery || blocksRef.current.length === 0) return;
+    const lowerQuery = searchQuery.toLowerCase();
+
+    // Find the first block whose text contains the query
+    const parser = new DOMParser();
+    let targetIndex = -1;
+    for (let i = 0; i < blocksRef.current.length; i++) {
+      const doc = parser.parseFromString(blocksRef.current[i].html, 'text/html');
+      const text = doc.body.textContent?.toLowerCase() ?? '';
+      if (text.includes(lowerQuery)) {
+        targetIndex = i;
+        break;
+      }
+    }
+
+    if (targetIndex < 0) {
+      onSearchResult?.(0);
+      return;
+    }
+
+    // Activate the block containing the match
+    activateBlockRef.current(targetIndex);
+
+    // Apply search highlighting after the block content is loaded
+    requestAnimationFrame(() => {
+      editor.commands.setSearchQuery(searchQuery);
+      const state = getSearchPluginKey().getState(editor.state);
+      const matchCount = state?.matches.length ?? 0;
+      onSearchResult?.(matchCount);
+      if (matchCount > 0) {
+        editor.commands.setCurrentMatch(0);
+        const match = state!.matches[0];
+        editor.commands.focus(match.from);
+      }
+    });
+  }, [editor, searchQuery, blocksVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Deactivate the current block and serialize its content back
   const deactivateBlock = useCallback(() => {
