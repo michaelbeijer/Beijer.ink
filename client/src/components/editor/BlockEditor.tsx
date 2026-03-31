@@ -26,6 +26,7 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
   const blocksRef = useRef<Block[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const activeIndexRef = useRef(-1);
+  const [blocksVersion, setBlocksVersion] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
@@ -133,8 +134,9 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
     if (content === lastExternalContent.current) return;
     lastExternalContent.current = content;
     blocksRef.current = splitBlocks(content);
-    setActiveIndex(-1);
     activeIndexRef.current = -1;
+    setActiveIndex(-1);
+    setBlocksVersion((v) => v + 1); // Force re-render so useMemo picks up new blocks
   }, [content]);
 
   // Deactivate the current block and serialize its content back
@@ -183,7 +185,7 @@ export function BlockEditor({ content, onChange, onEditorReady, placeholder }: B
     const before = blocks.slice(0, activeIndex).map((b) => b.html).join('');
     const after = blocks.slice(activeIndex + 1).map((b) => b.html).join('');
     return { beforeHtml: before, afterHtml: after };
-  }, [activeIndex, content]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeIndex, blocksVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Click handler to activate blocks
   const handleClick = useCallback(
