@@ -1,6 +1,6 @@
 # Beijer.ink
 
-A personal note-taking web app with inline markdown styling, full-text search, and a clean responsive UI. Built as a single-user app, accessible as a PWA on mobile.
+A personal note-taking web app with a WYSIWYG rich text editor, full-text search, and a clean responsive UI. Built as a single-user app, accessible as a PWA on mobile.
 
 <img width="1509" height="1206" alt="image" src="https://github.com/user-attachments/assets/3136f331-db0a-4742-ab1b-78b425995bd8" />
 
@@ -8,7 +8,7 @@ A personal note-taking web app with inline markdown styling, full-text search, a
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 19, Vite, CodeMirror 6, Tailwind CSS 4, React Query |
+| Frontend | React 19, Vite, Tiptap (ProseMirror), Tailwind CSS 4, React Query |
 | Backend | Node.js, Express, TypeScript |
 | Database | PostgreSQL (Prisma ORM) |
 | Search | PostgreSQL full-text search (tsvector + GIN index) |
@@ -17,8 +17,9 @@ A personal note-taking web app with inline markdown styling, full-text search, a
 
 ## Features
 
-- **Inline markdown editor** — CodeMirror 6 with live markdown styling: bold text appears bold, headers are larger, code is highlighted, and markup characters remain visible but dimmed
-- **Markdown toolbar** — Toggleable formatting toolbar for bold, italic, strikethrough, headings, code, links, lists, blockquotes, and horizontal rules
+- **WYSIWYG rich text editor** — Tiptap-based editor where bold text looks bold, headings look like headings, tables are visual grids, and task lists have checkboxes — no Markdown syntax required
+- **Block-level editing** — Large documents (50KB+) render as fast static HTML; clicking any block activates just that block in a live editor, preventing browser freezes on very large notes
+- **Formatting toolbar** — Toggleable toolbar for bold, italic, underline, strikethrough, headings, code, links, lists, blockquotes, tables, and horizontal rules; buttons highlight to show active formats
 - **Fullscreen mode** — Expand the editor to fill the entire page; exit with Escape
 - **Global search** — Weighted PostgreSQL FTS across all notes (title boosted over content), with highlighted result snippets
 - **Notebooks** — Organize notes in a hierarchical tree with right-click context menu for moving, renaming, and creating sub-notebooks
@@ -39,8 +40,8 @@ beijer.ink/
 │   ├── src/
 │   │   ├── api/          # Axios API wrappers
 │   │   ├── components/   # UI components (layout, editor, notes, search, auth)
-│   │   ├── editor/       # CodeMirror theme and highlight styles
-│   │   ├── hooks/        # React hooks (useAuth, useAutoSave, useCodeMirror, useSearch)
+│   │   ├── editor/       # Tiptap extensions (search highlighting)
+│   │   ├── hooks/        # React hooks (useAuth, useAutoSave, useTiptap, useSearch)
 │   │   └── types/        # TypeScript type definitions
 │   └── public/           # PWA manifest, icons, service worker
 ├── server/               # Express API backend

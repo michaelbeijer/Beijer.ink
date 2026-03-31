@@ -7,7 +7,32 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.17.0**
+Current Version: **0.18.0**
+
+---
+
+## [0.18.0] — 2026-03-31
+
+### Added
+- **WYSIWYG editor** — Replaced the CodeMirror Markdown editor with Tiptap, a ProseMirror-based rich text editor; bold text looks bold, headings look like headings, tables are visual grids — no Markdown syntax required
+- **Block-level editing for large documents** — Notes over 50KB render as fast static HTML; clicking any block (paragraph, heading, table, etc.) activates just that block in a live Tiptap editor, avoiding browser freezes on very large documents
+- **Rich table editing** — Insert, resize, and edit tables with full cell-by-cell WYSIWYG; add/remove rows and columns via toolbar or right-click
+- **Task lists** — Checkbox-based task lists with nested indentation support
+- **Underline formatting** — New toolbar button and keyboard shortcut (Ctrl+U)
+- **Active formatting indicators** — Toolbar buttons highlight to show which formats are active at the cursor position
+- **Migration script** — `server/scripts/migrate-md-to-html.ts` converts existing Markdown notes to HTML (one-time run)
+
+### Changed
+- **Storage format** — Notes and scratchpad now stored as HTML instead of Markdown; PostgreSQL `to_tsvector` natively strips HTML for full-text search
+- **Backup export** — Downloaded backups now contain `.html` files (with inline styles) instead of `.md` files
+- **Search excerpts** — `ts_headline` now strips HTML tags before generating highlighted snippets
+- **Title extraction** — Server-side title extraction uses HTML-aware regex instead of first-line-of-markdown
+
+### Removed
+- CodeMirror 6 editor and all `@codemirror/*` packages
+- `react-markdown` and `remark-gfm` (Markdown preview)
+- Markdown cheat sheet dialog
+- Edit/Preview/Split view mode toggle
 
 ---
 
