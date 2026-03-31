@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table } from '@tiptap/extension-table';
@@ -13,6 +13,8 @@ import { TaskItem } from '@tiptap/extension-task-item';
 import { SearchHighlight, getSearchPluginKey } from '../editor/tiptapSearchHighlight';
 import type { SearchHighlightState } from '../editor/tiptapSearchHighlight';
 
+const DEBOUNCE_MS = 300;
+
 interface UseTiptapOptions {
   onChange: (html: string) => void;
   placeholder?: string;
@@ -22,6 +24,7 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const suppressRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const editor = useEditor({
     extensions: [
@@ -40,15 +43,27 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       SearchHighlight,
     ],
     onUpdate: ({ editor: ed }) => {
-      if (!suppressRef.current) {
+      if (suppressRef.current) return;
+      // Debounce the expensive getHTML() serialization
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
         onChangeRef.current(ed.getHTML());
-      }
+      }, DEBOUNCE_MS);
     },
   });
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const setContent = useCallback(
     (html: string) => {
       if (!editor) return;
+      // Cancel any pending debounced save from the previous note
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       suppressRef.current = true;
       editor.commands.setContent(html);
       suppressRef.current = false;
