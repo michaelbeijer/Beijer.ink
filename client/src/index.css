@@ -306,26 +306,6 @@
   font-size: 15px;
   outline: none;
   min-height: 100%;
-  /* Isolate layout/paint so edits don't trigger full-page reflow */
-  contain: style layout;
-}
-
-/* Skip rendering for off-screen blocks — crucial for large documents.
-   The browser only paints blocks near the viewport, dramatically reducing
-   layout/paint cost for documents with thousands of paragraphs. */
-.tiptap-editor .ProseMirror > p,
-.tiptap-editor .ProseMirror > h1,
-.tiptap-editor .ProseMirror > h2,
-.tiptap-editor .ProseMirror > h3,
-.tiptap-editor .ProseMirror > ul,
-.tiptap-editor .ProseMirror > ol,
-.tiptap-editor .ProseMirror > blockquote,
-.tiptap-editor .ProseMirror > pre,
-.tiptap-editor .ProseMirror > hr,
-.tiptap-editor .ProseMirror > table,
-.tiptap-editor .ProseMirror > div {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 2.5em;
 }
 
 .tiptap-editor .ProseMirror ::selection {
@@ -388,21 +368,24 @@
   margin-top: 4px;
 }
 
-/* ── Tiptap content element styles ── */
+/* ── Content element styles (shared between Tiptap editor and block-mode static HTML) ── */
 
-.tiptap-editor .ProseMirror h1 {
+.tiptap-editor .ProseMirror h1,
+.tiptap-content h1 {
   font-size: 1.5em;
   font-weight: 700;
   margin: 1em 0 0.5em;
 }
 
-.tiptap-editor .ProseMirror h2 {
+.tiptap-editor .ProseMirror h2,
+.tiptap-content h2 {
   font-size: 1.3em;
   font-weight: 700;
   margin: 1em 0 0.5em;
 }
 
-.tiptap-editor .ProseMirror h3 {
+.tiptap-editor .ProseMirror h3,
+.tiptap-content h3 {
   font-size: 1.15em;
   font-weight: 600;
   margin: 1em 0 0.5em;
@@ -410,35 +393,44 @@
 
 .tiptap-editor .ProseMirror h4,
 .tiptap-editor .ProseMirror h5,
-.tiptap-editor .ProseMirror h6 {
+.tiptap-editor .ProseMirror h6,
+.tiptap-content h4,
+.tiptap-content h5,
+.tiptap-content h6 {
   font-size: 1em;
   font-weight: 600;
   margin: 1em 0 0.5em;
 }
 
-.tiptap-editor .ProseMirror p {
+.tiptap-editor .ProseMirror p,
+.tiptap-content p {
   margin: 0.5em 0;
 }
 
-.tiptap-editor .ProseMirror a {
+.tiptap-editor .ProseMirror a,
+.tiptap-content a {
   color: var(--t-link);
   text-decoration: underline;
 }
 
-.tiptap-editor .ProseMirror strong {
+.tiptap-editor .ProseMirror strong,
+.tiptap-content strong {
   font-weight: 700;
 }
 
-.tiptap-editor .ProseMirror em {
+.tiptap-editor .ProseMirror em,
+.tiptap-content em {
   font-style: italic;
 }
 
-.tiptap-editor .ProseMirror del {
+.tiptap-editor .ProseMirror del,
+.tiptap-content del {
   text-decoration: line-through;
   color: var(--t-strikethrough);
 }
 
-.tiptap-editor .ProseMirror code {
+.tiptap-editor .ProseMirror code,
+.tiptap-content code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
   font-size: 0.9em;
@@ -447,7 +439,8 @@
   padding: 1px 4px;
 }
 
-.tiptap-editor .ProseMirror pre {
+.tiptap-editor .ProseMirror pre,
+.tiptap-content pre {
   background: var(--t-code-bg);
   border-radius: 6px;
   padding: 12px 16px;
@@ -455,64 +448,91 @@
   margin: 0.75em 0;
 }
 
-.tiptap-editor .ProseMirror pre code {
+.tiptap-editor .ProseMirror pre code,
+.tiptap-content pre code {
   background: none;
   padding: 0;
   border-radius: 0;
 }
 
-.tiptap-editor .ProseMirror blockquote {
+.tiptap-editor .ProseMirror blockquote,
+.tiptap-content blockquote {
   border-left: 3px solid var(--t-quote-border);
   padding-left: 12px;
   color: var(--t-quote-text);
   margin: 0.75em 0;
 }
 
-.tiptap-editor .ProseMirror ul {
+.tiptap-editor .ProseMirror ul,
+.tiptap-content ul {
   list-style: disc;
   padding-left: 1.5em;
   margin: 0.5em 0;
 }
 
-.tiptap-editor .ProseMirror ol {
+.tiptap-editor .ProseMirror ol,
+.tiptap-content ol {
   list-style: decimal;
   padding-left: 1.5em;
   margin: 0.5em 0;
 }
 
-.tiptap-editor .ProseMirror li {
+.tiptap-editor .ProseMirror li,
+.tiptap-content li {
   margin: 0.25em 0;
 }
 
-.tiptap-editor .ProseMirror hr {
+.tiptap-editor .ProseMirror hr,
+.tiptap-content hr {
   border: none;
   border-top: 1px solid var(--t-edge);
   margin: 1.5em 0;
 }
 
-.tiptap-editor .ProseMirror table {
+.tiptap-editor .ProseMirror table,
+.tiptap-content table {
   border-collapse: collapse;
   width: 100%;
   margin: 0.75em 0;
 }
 
 .tiptap-editor .ProseMirror th,
-.tiptap-editor .ProseMirror td {
+.tiptap-editor .ProseMirror td,
+.tiptap-content th,
+.tiptap-content td {
   border: 1px solid var(--t-table-border);
   padding: 6px 12px;
   text-align: left;
 }
 
-.tiptap-editor .ProseMirror th {
+.tiptap-editor .ProseMirror th,
+.tiptap-content th {
   background: var(--t-table-header);
   font-weight: 600;
 }
 
-.tiptap-editor .ProseMirror img {
+.tiptap-editor .ProseMirror img,
+.tiptap-content img {
   max-width: 100%;
   border-radius: 6px;
 }
 
-.tiptap-editor .ProseMirror input[type="checkbox"] {
+.tiptap-editor .ProseMirror input[type="checkbox"],
+.tiptap-content input[type="checkbox"] {
   margin-right: 6px;
+}
+
+/* ── Block editor base styles ── */
+.tiptap-content {
+  line-height: 1.7;
+  color: var(--t-ink);
+  font-size: 15px;
+}
+
+.block-editor-active .ProseMirror {
+  outline: none;
+  caret-color: var(--t-caret);
+  border-left: 2px solid var(--t-accent);
+  padding-left: 8px;
+  margin-left: -10px;
 }

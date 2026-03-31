@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type } from 'lucide-react';
 import { EditorContent } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 
 import { getNoteById, updateNote, deleteNote } from '../../api/notes';
 import type { NoteSummary } from '../../types/note';
@@ -9,8 +10,10 @@ import { useAutoSave } from '../../hooks/useAutoSave';
 import { useTiptap } from '../../hooks/useTiptap';
 import { TiptapToolbar } from './TiptapToolbar';
 import { SearchHighlightBar } from './SearchHighlightBar';
+import { BlockEditor } from './BlockEditor';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
+const BLOCK_MODE_THRESHOLD = 50_000;
 
 interface NoteEditorProps {
   noteId: string;
@@ -33,6 +36,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   });
   const [searchBar, setSearchBar] = useState<{ query: string; matchCount: number; currentIndex: number } | null>(null);
   const pendingSearchRef = useRef<string | null>(null);
+  const [blockEditor, setBlockEditor] = useState<Editor | null>(null);
 
   const handleChange = useCallback(
     (html: string) => {
@@ -71,6 +75,8 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     queryKey: ['note', noteId],
     queryFn: () => getNoteById(noteId),
   });
+
+  const isLargeNote = (note?.content?.length ?? 0) >= BLOCK_MODE_THRESHOLD;
 
   const deleteMutation = useMutation({
     mutationFn: deleteNote,
@@ -120,8 +126,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   }
 
   // Load note content into Tiptap (deferred so UI chrome renders first)
+  // Skip for large notes — BlockEditor handles its own content loading
   useEffect(() => {
-    if (note && editor) {
+    if (note && editor && !isLargeNote) {
       isLoadingRef.current = true;
       // Yield to browser so toolbar/chrome paints before heavy content parsing
       const id = requestAnimationFrame(() => {
@@ -132,7 +139,11 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
       });
       return () => cancelAnimationFrame(id);
     }
-  }, [note, editor, setContent]); // eslint-disable-line react-hooks/exhaustive-deps
+    // For large notes, just set char count
+    if (note && isLargeNote) {
+      setCharCount((note.content || '').length);
+    }
+  }, [note, editor, setContent, isLargeNote]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-focus on load (skip on touch devices to avoid keyboard popup)
   useEffect(() => {
@@ -236,12 +247,12 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
       </div>
 
       {/* Formatting toolbar */}
-      {showToolbar && <TiptapToolbar editor={editor} />}
+      {showToolbar && <TiptapToolbar editor={isLargeNote ? blockEditor : editor} />}
 
       {/* Editor area */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">
-        {/* Search highlight bar */}
-        {searchBar && (
+        {/* Search highlight bar (hidden in block mode) */}
+        {searchBar && !isLargeNote && (
           <SearchHighlightBar
             query={searchBar.query}
             matchCount={searchBar.matchCount}
@@ -252,10 +263,18 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           />
         )}
 
-        {/* Tiptap editor */}
-        <div className="tiptap-editor w-full min-h-0 overflow-auto">
-          <EditorContent editor={editor} />
-        </div>
+        {isLargeNote ? (
+          <BlockEditor
+            content={note?.content || ''}
+            onChange={handleChange}
+            onEditorReady={setBlockEditor}
+            placeholder="Start writing..."
+          />
+        ) : (
+          <div className="tiptap-editor w-full min-h-0 overflow-auto">
+            <EditorContent editor={editor} />
+          </div>
+        )}
       </div>
 
       {/* Status bar */}
