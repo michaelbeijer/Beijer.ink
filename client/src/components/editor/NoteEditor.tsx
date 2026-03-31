@@ -12,6 +12,7 @@ import { TiptapToolbar } from './TiptapToolbar';
 import { SearchHighlightBar } from './SearchHighlightBar';
 import { BlockEditor } from './BlockEditor';
 import { TableOfContents } from './TableOfContents';
+import { TableMenu } from './TableMenu';
 import { splitBlocks } from '../../utils/blockParser';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
@@ -339,6 +340,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           </div>
         )}
       </div>
+
+      {/* Table context menu (right-click inside a table) */}
+      <TableMenu editor={isLargeNote ? blockEditor : editor} />
 
       {/* Status bar */}
       <div className="px-4 py-1 border-t border-edge text-xs text-ink-dim">

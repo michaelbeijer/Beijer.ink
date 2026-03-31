@@ -579,3 +579,51 @@
 
 .toc-level-2 { padding-left: 24px; }
 .toc-level-3 { padding-left: 36px; }
+
+/* ── Table context menu ── */
+.table-context-menu {
+  position: fixed;
+  z-index: 50;
+  min-width: 180px;
+  background: var(--t-card);
+  border: 1px solid var(--t-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  font-size: 13px;
+}
+
+.table-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: var(--t-ink-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.1s;
+}
+
+.table-context-menu-item:hover {
+  background-color: var(--t-hover);
+  color: var(--t-ink);
+}
+
+.table-context-menu-danger:hover {
+  color: var(--t-danger);
+}
+
+.table-context-menu-separator {
+  height: 1px;
+  background: var(--t-border);
+  margin: 4px 0;
+}
+
+.table-context-menu-group {
+  display: flex;
+  flex-direction: column;
+}
