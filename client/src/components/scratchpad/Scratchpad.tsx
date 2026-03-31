@@ -1,36 +1,38 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
+import { EditorContent } from '@tiptap/react';
 import { getScratchpad, updateScratchpad } from '../../api/scratchpad';
-import { useCodeMirror } from '../../hooks/useCodeMirror';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTiptap } from '../../hooks/useTiptap';
 
 export function Scratchpad() {
-  const { theme } = useTheme();
   const [charCount, setCharCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastSavedRef = useRef<string>('');
 
-  const handleChange = useCallback((value: string) => {
-    setCharCount(value.length);
+  const handleChange = useCallback((html: string) => {
+    const len = editorRef.current?.getText().length ?? 0;
+    setCharCount(len);
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
-      if (value === lastSavedRef.current) return;
-      lastSavedRef.current = value;
+      if (html === lastSavedRef.current) return;
+      lastSavedRef.current = html;
       try {
-        await updateScratchpad(value);
+        await updateScratchpad(html);
       } catch (err) {
         console.error('Scratchpad auto-save failed:', err);
       }
     }, 1000);
   }, []);
 
-  const { containerRef, setDoc, focus } = useCodeMirror({
+  const { editor, setContent, focus } = useTiptap({
     onChange: handleChange,
     placeholder: 'Jot something down...',
-    theme,
   });
+
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
 
   const { data } = useQuery({
     queryKey: ['scratchpad'],
@@ -39,17 +41,17 @@ export function Scratchpad() {
 
   // Load saved content
   useEffect(() => {
-    if (data) {
-      setDoc(data.content);
-      setCharCount(data.content.length);
+    if (data && editor) {
+      setContent(data.content);
+      setCharCount(editor.getText().length);
       lastSavedRef.current = data.content;
     }
-  }, [data, setDoc]);
+  }, [data, editor, setContent]);
 
   // Auto-focus on mount
   useEffect(() => {
-    setTimeout(() => focus(), 50);
-  }, [focus]);
+    if (editor) setTimeout(() => focus(), 50);
+  }, [editor, focus]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -66,8 +68,10 @@ export function Scratchpad() {
         <h2 className="text-sm font-medium text-ink-secondary">Scratchpad</h2>
       </div>
 
-      {/* CodeMirror editor */}
-      <div ref={containerRef} className="flex-1 min-h-0 overflow-hidden" />
+      {/* Tiptap editor */}
+      <div className="tiptap-editor flex-1 min-h-0 overflow-auto">
+        <EditorContent editor={editor} />
+      </div>
 
       {/* Footer */}
       <div className="px-4 py-1 border-t border-edge text-xs text-ink-dim">

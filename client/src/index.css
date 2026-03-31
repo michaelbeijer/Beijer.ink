@@ -297,122 +297,128 @@
   background: var(--t-scrollbar-hover);
 }
 
-/* ── CodeMirror base styles ── */
-.cm-editor {
-  height: 100%;
-  font-size: 14px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
-  background-color: transparent;
-}
-
-.cm-editor.cm-focused {
-  outline: none;
-}
-
-.cm-editor .cm-scroller {
-  overflow: auto;
-}
-
-.cm-editor .cm-content {
+/* ── Tiptap editor base styles ── */
+.tiptap-editor .ProseMirror {
   padding: 12px 16px;
   caret-color: var(--t-caret);
   line-height: 1.7;
   color: var(--t-ink);
+  font-size: 15px;
+  outline: none;
+  min-height: 100%;
 }
 
-.cm-editor .cm-cursor {
-  border-left-color: var(--t-caret);
+.tiptap-editor .ProseMirror ::selection {
+  background-color: var(--t-selection-focused);
 }
 
-.cm-editor .cm-gutters {
-  display: none;
-}
-
-.cm-editor .cm-activeLine {
-  background-color: transparent;
-}
-
-.cm-editor .cm-selectionBackground {
-  background-color: var(--t-selection) !important;
-}
-
-.cm-editor.cm-focused .cm-selectionBackground {
-  background-color: var(--t-selection-focused) !important;
-}
-
-.cm-editor .cm-placeholder {
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
   color: var(--t-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ── Tiptap table resize handle ── */
+.tiptap-editor .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--t-accent, #3b82f6);
+  pointer-events: none;
+}
+
+.tiptap-editor .ProseMirror .tableWrapper {
+  overflow-x: auto;
+}
+
+.tiptap-editor .ProseMirror table .selectedCell {
+  background-color: var(--t-selection);
 }
 
 /* ── Search highlighting ── */
-.cm-search-match {
+.tiptap-search-match {
   background-color: var(--t-search-bg);
   border-radius: 2px;
 }
 
-.cm-search-match-active {
+.tiptap-search-match-active {
   background-color: var(--t-search-active);
   outline: 2px solid var(--t-search-outline);
   border-radius: 2px;
 }
 
-/* ── Markdown preview ── */
-.markdown-preview {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--t-ink);
+/* ── Task list ── */
+.tiptap-editor .ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
 }
 
-.markdown-preview h1 {
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.tiptap-editor .ProseMirror ul[data-type="taskList"] li > label {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+/* ── Tiptap content element styles ── */
+
+.tiptap-editor .ProseMirror h1 {
   font-size: 1.5em;
   font-weight: 700;
   margin: 1em 0 0.5em;
 }
 
-.markdown-preview h2 {
+.tiptap-editor .ProseMirror h2 {
   font-size: 1.3em;
   font-weight: 700;
   margin: 1em 0 0.5em;
 }
 
-.markdown-preview h3 {
+.tiptap-editor .ProseMirror h3 {
   font-size: 1.15em;
   font-weight: 600;
   margin: 1em 0 0.5em;
 }
 
-.markdown-preview h4,
-.markdown-preview h5,
-.markdown-preview h6 {
+.tiptap-editor .ProseMirror h4,
+.tiptap-editor .ProseMirror h5,
+.tiptap-editor .ProseMirror h6 {
   font-size: 1em;
   font-weight: 600;
   margin: 1em 0 0.5em;
 }
 
-.markdown-preview p {
+.tiptap-editor .ProseMirror p {
   margin: 0.5em 0;
 }
 
-.markdown-preview a {
+.tiptap-editor .ProseMirror a {
   color: var(--t-link);
   text-decoration: underline;
 }
 
-.markdown-preview strong {
+.tiptap-editor .ProseMirror strong {
   font-weight: 700;
 }
 
-.markdown-preview em {
+.tiptap-editor .ProseMirror em {
   font-style: italic;
 }
 
-.markdown-preview del {
+.tiptap-editor .ProseMirror del {
   text-decoration: line-through;
   color: var(--t-strikethrough);
 }
 
-.markdown-preview code {
+.tiptap-editor .ProseMirror code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
   font-size: 0.9em;
@@ -421,7 +427,7 @@
   padding: 1px 4px;
 }
 
-.markdown-preview pre {
+.tiptap-editor .ProseMirror pre {
   background: var(--t-code-bg);
   border-radius: 6px;
   padding: 12px 16px;
@@ -429,64 +435,64 @@
   margin: 0.75em 0;
 }
 
-.markdown-preview pre code {
+.tiptap-editor .ProseMirror pre code {
   background: none;
   padding: 0;
   border-radius: 0;
 }
 
-.markdown-preview blockquote {
+.tiptap-editor .ProseMirror blockquote {
   border-left: 3px solid var(--t-quote-border);
   padding-left: 12px;
   color: var(--t-quote-text);
   margin: 0.75em 0;
 }
 
-.markdown-preview ul {
+.tiptap-editor .ProseMirror ul {
   list-style: disc;
   padding-left: 1.5em;
   margin: 0.5em 0;
 }
 
-.markdown-preview ol {
+.tiptap-editor .ProseMirror ol {
   list-style: decimal;
   padding-left: 1.5em;
   margin: 0.5em 0;
 }
 
-.markdown-preview li {
+.tiptap-editor .ProseMirror li {
   margin: 0.25em 0;
 }
 
-.markdown-preview hr {
+.tiptap-editor .ProseMirror hr {
   border: none;
   border-top: 1px solid var(--t-edge);
   margin: 1.5em 0;
 }
 
-.markdown-preview table {
+.tiptap-editor .ProseMirror table {
   border-collapse: collapse;
   width: 100%;
   margin: 0.75em 0;
 }
 
-.markdown-preview th,
-.markdown-preview td {
+.tiptap-editor .ProseMirror th,
+.tiptap-editor .ProseMirror td {
   border: 1px solid var(--t-table-border);
   padding: 6px 12px;
   text-align: left;
 }
 
-.markdown-preview th {
+.tiptap-editor .ProseMirror th {
   background: var(--t-table-header);
   font-weight: 600;
 }
 
-.markdown-preview img {
+.tiptap-editor .ProseMirror img {
   max-width: 100%;
   border-radius: 6px;
 }
 
-.markdown-preview input[type="checkbox"] {
+.tiptap-editor .ProseMirror input[type="checkbox"] {
   margin-right: 6px;
 }

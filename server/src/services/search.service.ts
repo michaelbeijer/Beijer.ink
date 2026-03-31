@@ -40,7 +40,7 @@ export async function searchNotes(query: string, filters: SearchFilters) {
       ) AS rank,
       ts_headline(
         'english',
-        n.content,
+        regexp_replace(n.content, '<[^>]+>', ' ', 'g'),
         ${tsquery},
         'StartSel=<mark>, StopSel=</mark>, MaxWords=60, MinWords=20, MaxFragments=2'
       ) AS headline

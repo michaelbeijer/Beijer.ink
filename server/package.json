@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "tsx scripts/seed-password.ts",
+    "migrate:html": "tsx scripts/migrate-md-to-html.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate"
   },
@@ -34,6 +35,8 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/marked": "^5.0.2",
+    "marked": "^17.0.5",
     "prisma": "^6.4.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

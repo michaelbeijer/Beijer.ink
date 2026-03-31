@@ -1,8 +1,12 @@
-export function getPreview(text: string, maxLength = 120): string {
-  // Skip the first line (it's the title) and use the rest for preview
-  const lines = text.split('\n');
-  const body = lines.slice(1).join('\n').trim();
-  if (!body) return '';
-  if (body.length <= maxLength) return body;
-  return body.slice(0, maxLength) + '...';
+export function getPreview(content: string, maxLength = 120): string {
+  // Remove the first block element (title) and extract remaining text
+  const withoutFirstBlock = content.replace(/^<(h[1-6]|p)[^>]*>.*?<\/\1>/, '');
+  const text = withoutFirstBlock
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[^;]+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
 }

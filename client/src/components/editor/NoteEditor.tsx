@@ -1,21 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type, Pencil, Eye, Columns2 } from 'lucide-react';
+import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type } from 'lucide-react';
+import { EditorContent } from '@tiptap/react';
 
 import { getNoteById, updateNote, deleteNote } from '../../api/notes';
 import type { NoteSummary } from '../../types/note';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import { useCodeMirror } from '../../hooks/useCodeMirror';
-import { useTheme } from '../../contexts/ThemeContext';
-import { stripMarkdown } from '../../utils/stripMarkdown';
-import { MarkdownToolbar } from './MarkdownToolbar';
-import { MarkdownPreview } from './MarkdownPreview';
+import { useTiptap } from '../../hooks/useTiptap';
+import { TiptapToolbar } from './TiptapToolbar';
 import { SearchHighlightBar } from './SearchHighlightBar';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
-const MODE_KEY = 'beijer-ink-editor-mode';
-
-type EditorMode = 'edit' | 'preview' | 'split';
 
 interface NoteEditorProps {
   noteId: string;
@@ -28,48 +23,46 @@ interface NoteEditorProps {
 
 export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullscreen, searchQuery, onClearSearch }: NoteEditorProps) {
   const queryClient = useQueryClient();
-  const { theme } = useTheme();
   const { save } = useAutoSave(noteId);
   const isLoadingRef = useRef(false);
   const saveRef = useRef(save);
   saveRef.current = save;
   const [charCount, setCharCount] = useState(0);
-  const [previewContent, setPreviewContent] = useState('');
   const [showToolbar, setShowToolbar] = useState(() => {
     return localStorage.getItem(TOOLBAR_KEY) === 'true';
-  });
-  const [editorMode, setEditorMode] = useState<EditorMode>(() => {
-    return (localStorage.getItem(MODE_KEY) as EditorMode) || 'edit';
   });
   const [searchBar, setSearchBar] = useState<{ query: string; matchCount: number; currentIndex: number } | null>(null);
   const pendingSearchRef = useRef<string | null>(null);
 
   const handleChange = useCallback(
-    (value: string) => {
-      setCharCount(value.length);
-      setPreviewContent(value);
+    (html: string) => {
       // User started typing — clear search highlights
       setSearchBar(null);
       if (!isLoadingRef.current) {
-        const firstLine = stripMarkdown(value.split('\n')[0]?.trim() || '') || 'Untitled';
+        const plainText = editorRef.current?.getText() ?? '';
+        setCharCount(plainText.length);
+        const firstLine = plainText.split('\n')[0]?.trim() || 'Untitled';
         queryClient.setQueriesData<NoteSummary[]>(
           { queryKey: ['notes'] },
           (old) =>
             old?.map((n) =>
-              n.id === noteId ? { ...n, title: firstLine, content: value } : n
+              n.id === noteId ? { ...n, title: firstLine, content: html } : n
             )
         );
-        saveRef.current(value);
+        saveRef.current(html);
       }
     },
     [noteId, queryClient]
   );
 
-  const { containerRef, view, setDoc, focus, setSearch, clearSearch, getSearchState, goToMatch, nextMatch, prevMatch } = useCodeMirror({
+  const { editor, setContent, focus, setSearch, clearSearch, getSearchState, goToMatch, nextMatch, prevMatch } = useTiptap({
     onChange: handleChange,
     placeholder: 'Start writing...',
-    theme,
   });
+
+  // Keep a ref to editor for use inside handleChange
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
 
   const { data: note } = useQuery({
     queryKey: ['note', noteId],
@@ -123,24 +116,23 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     });
   }
 
-  // Load note content into CodeMirror
+  // Load note content into Tiptap
   useEffect(() => {
-    if (note) {
+    if (note && editor) {
       isLoadingRef.current = true;
-      setDoc(note.content || '');
-      setCharCount((note.content || '').length);
-      setPreviewContent(note.content || '');
+      setContent(note.content || '');
+      setCharCount(editor.getText().length);
       isLoadingRef.current = false;
 
       // Apply pending search after document is set
       applyPendingSearch();
     }
-  }, [note, setDoc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [note, editor, setContent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-focus on load (only in edit modes, skip on touch devices to avoid keyboard popup)
+  // Auto-focus on load (skip on touch devices to avoid keyboard popup)
   useEffect(() => {
-    if (note && editorMode !== 'preview' && !('ontouchstart' in window)) focus();
-  }, [note, focus, editorMode]);
+    if (note && editor && !('ontouchstart' in window)) focus();
+  }, [note, editor, focus]);
 
   // Escape exits fullscreen
   useEffect(() => {
@@ -161,12 +153,6 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     });
   }, []);
 
-  // Persist editor mode
-  const changeMode = useCallback((mode: EditorMode) => {
-    setEditorMode(mode);
-    localStorage.setItem(MODE_KEY, mode);
-  }, []);
-
   const handleDismissSearch = useCallback(() => {
     clearSearch();
     setSearchBar(null);
@@ -185,47 +171,24 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     setSearchBar((prev) => prev ? { ...prev, currentIndex: state.currentIndex, matchCount: state.matches.length } : null);
   }, [prevMatch, getSearchState]);
 
-  const showEditor = editorMode === 'edit' || editorMode === 'split';
-  const showPreview = editorMode === 'preview' || editorMode === 'split';
-
-  const modeButtonClass = (mode: EditorMode) =>
-    `p-1.5 rounded transition-colors ${
-      editorMode === mode
-        ? 'text-accent bg-accent/10'
-        : 'text-ink-faint hover:text-ink hover:bg-hover'
-    }`;
-
   return (
     <div className="h-full flex flex-col bg-surface">
       {/* Action bar */}
       <div className="flex items-center gap-1 px-4 py-2 border-b border-edge">
-        {/* Mode toggle — left side */}
-        <div className="flex items-center gap-0.5 mr-auto">
-          <button onClick={() => changeMode('edit')} className={modeButtonClass('edit')} title="Edit">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => changeMode('preview')} className={modeButtonClass('preview')} title="Preview">
-            <Eye className="w-4 h-4" />
-          </button>
-          <button onClick={() => changeMode('split')} className={modeButtonClass('split')} title="Split view">
-            <Columns2 className="w-4 h-4" />
-          </button>
-        </div>
+        <div className="mr-auto" />
 
         {/* Right-side actions */}
-        {showEditor && (
-          <button
-            onClick={toggleToolbar}
-            className={`p-1.5 rounded transition-colors ${
-              showToolbar
-                ? 'text-accent bg-accent/10'
-                : 'text-ink-faint hover:text-ink hover:bg-hover'
-            }`}
-            title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
-          >
-            <Type className="w-4 h-4" />
-          </button>
-        )}
+        <button
+          onClick={toggleToolbar}
+          className={`p-1.5 rounded transition-colors ${
+            showToolbar
+              ? 'text-accent bg-accent/10'
+              : 'text-ink-faint hover:text-ink hover:bg-hover'
+          }`}
+          title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
+        >
+          <Type className="w-4 h-4" />
+        </button>
         {onToggleFullscreen && (
           <button
             onClick={onToggleFullscreen}
@@ -267,13 +230,13 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
         </button>
       </div>
 
-      {/* Markdown toolbar — only in edit/split modes */}
-      {showToolbar && showEditor && <MarkdownToolbar view={view} />}
+      {/* Formatting toolbar */}
+      {showToolbar && <TiptapToolbar editor={editor} />}
 
-      {/* Editor / Preview area */}
+      {/* Editor area */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">
         {/* Search highlight bar */}
-        {searchBar && showEditor && (
+        {searchBar && (
           <SearchHighlightBar
             query={searchBar.query}
             matchCount={searchBar.matchCount}
@@ -284,25 +247,10 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           />
         )}
 
-        {/* Editor — always mounted to preserve EditorView state, hidden in preview mode */}
-        <div
-          ref={containerRef}
-          className={`min-h-0 overflow-hidden ${
-            showEditor
-              ? editorMode === 'split' ? 'w-1/2' : 'w-full'
-              : 'w-0 overflow-hidden'
-          }`}
-        />
-
-        {editorMode === 'split' && (
-          <div className="w-px bg-edge shrink-0" />
-        )}
-
-        {showPreview && (
-          <div className={`${editorMode === 'split' ? 'w-1/2' : 'w-full'} min-h-0 overflow-auto`}>
-            <MarkdownPreview content={previewContent} />
-          </div>
-        )}
+        {/* Tiptap editor */}
+        <div className="tiptap-editor w-full min-h-0 overflow-auto">
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {/* Status bar */}

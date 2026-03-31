@@ -1,10 +1,18 @@
 import { Resend } from 'resend';
 import { config } from '../config.js';
 
-const resend = new Resend(config.resendApiKey);
+let resend: Resend | null = null;
+
+function getResend() {
+  if (!resend) {
+    if (!config.resendApiKey) throw new Error('RESEND_API_KEY is not set');
+    resend = new Resend(config.resendApiKey);
+  }
+  return resend;
+}
 
 export async function sendPasswordResetEmail(resetUrl: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: 'Beijer.ink <onboarding@resend.dev>',
     to: config.adminEmail,
     subject: 'Beijer.ink — Password Reset',
