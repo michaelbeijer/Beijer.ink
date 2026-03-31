@@ -15,6 +15,7 @@ import { splitBlocks, joinBlocks, type Block } from '../../utils/blockParser';
 import { SearchHighlight, getSearchPluginKey } from '../../editor/tiptapSearchHighlight';
 
 const DEBOUNCE_MS = 300;
+const LARGE_BLOCK_THRESHOLD = 20_000; // Skip per-keystroke serialization for blocks over 20KB
 
 interface BlockEditorProps {
   content: string;
@@ -38,6 +39,7 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const idleRef = useRef<number>(0);
   const suppressRef = useRef(false);
+  const dirtyRef = useRef(false);
   const lastExternalContent = useRef<string>('');
   // Ref for activateBlock so the keyboard extension can call it
   const activateBlockRef = useRef<(index: number) => void>(() => {});
@@ -99,12 +101,20 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
     onUpdate: ({ editor: ed }) => {
       if (suppressRef.current) return;
       const idx = activeIndexRef.current;
-      if (idx >= 0 && idx < blocksRef.current.length) {
-        blocksRef.current[idx] = {
-          html: ed.getHTML(),
-          tag: blocksRef.current[idx].tag,
-        };
+      if (idx < 0 || idx >= blocksRef.current.length) return;
+
+      // For large blocks (big tables), defer getHTML() to deactivation only.
+      // This avoids expensive serialization on every keystroke.
+      const isLargeBlock = blocksRef.current[idx].html.length >= LARGE_BLOCK_THRESHOLD;
+      if (isLargeBlock) {
+        dirtyRef.current = true;
+        return;
       }
+
+      blocksRef.current[idx] = {
+        html: ed.getHTML(),
+        tag: blocksRef.current[idx].tag,
+      };
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         const joined = joinBlocks(blocksRef.current);
@@ -199,6 +209,11 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
         html: editor.getHTML(),
         tag: blocksRef.current[idx].tag,
       };
+      // If a large block was dirty (deferred serialization), flush the save now
+      if (dirtyRef.current) {
+        dirtyRef.current = false;
+        onChangeRef.current(joinBlocks(blocksRef.current));
+      }
     }
   }, [editor]);
 
