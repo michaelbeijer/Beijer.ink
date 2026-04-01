@@ -6,10 +6,16 @@ import { getScratchpad, updateScratchpad } from '../../api/scratchpad';
 import { useTiptap } from '../../hooks/useTiptap';
 import { TiptapToolbar } from '../editor/TiptapToolbar';
 import { TableMenu } from '../editor/TableMenu';
+import { SearchHighlightBar } from '../editor/SearchHighlightBar';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
 
-export function Scratchpad() {
+interface ScratchpadProps {
+  searchQuery?: string | null;
+  onClearSearch?: () => void;
+}
+
+export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
   const [charCount, setCharCount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastSavedRef = useRef<string>('');
@@ -17,9 +23,13 @@ export function Scratchpad() {
     const stored = localStorage.getItem(TOOLBAR_KEY);
     return stored === null ? true : stored === 'true';
   });
+  const [searchBar, setSearchBar] = useState<{ query: string; matchCount: number; currentIndex: number } | null>(null);
+  const pendingSearchRef = useRef<string | null>(null);
+  const contentLoadedRef = useRef(false);
 
   const handleChange = useCallback((html: string) => {
     setCharCount(html.length);
+    setSearchBar(null);
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
@@ -33,7 +43,7 @@ export function Scratchpad() {
     }, 1000);
   }, []);
 
-  const { editor, setContent, focus } = useTiptap({
+  const { editor, setContent, focus, setSearch, clearSearch, getSearchState, goToMatch, nextMatch, prevMatch } = useTiptap({
     onChange: handleChange,
     placeholder: 'Jot something down...',
   });
@@ -46,14 +56,45 @@ export function Scratchpad() {
     queryFn: getScratchpad,
   });
 
+  function applyPendingSearch() {
+    const query = pendingSearchRef.current;
+    if (!query) return;
+    pendingSearchRef.current = null;
+
+    queueMicrotask(() => {
+      setSearch(query);
+      const state = getSearchState();
+      setSearchBar({
+        query,
+        matchCount: state.matches.length,
+        currentIndex: state.currentIndex,
+      });
+      if (state.matches.length > 0) {
+        goToMatch(0);
+      }
+    });
+  }
+
+  // Stash incoming search query
+  useEffect(() => {
+    if (searchQuery) {
+      pendingSearchRef.current = searchQuery;
+      if (contentLoadedRef.current) {
+        applyPendingSearch();
+      }
+    }
+  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load saved content
   useEffect(() => {
     if (data && editor) {
       setContent(data.content);
       setCharCount((data.content || '').length);
       lastSavedRef.current = data.content;
+      contentLoadedRef.current = true;
+      applyPendingSearch();
     }
-  }, [data, editor, setContent]);
+  }, [data, editor, setContent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-focus on mount
   useEffect(() => {
@@ -74,6 +115,24 @@ export function Scratchpad() {
       return next;
     });
   }, []);
+
+  const handleDismissSearch = useCallback(() => {
+    clearSearch();
+    setSearchBar(null);
+    onClearSearch?.();
+  }, [clearSearch, onClearSearch]);
+
+  const handleNextMatch = useCallback(() => {
+    nextMatch();
+    const state = getSearchState();
+    setSearchBar((prev) => prev ? { ...prev, currentIndex: state.currentIndex, matchCount: state.matches.length } : null);
+  }, [nextMatch, getSearchState]);
+
+  const handlePrevMatch = useCallback(() => {
+    prevMatch();
+    const state = getSearchState();
+    setSearchBar((prev) => prev ? { ...prev, currentIndex: state.currentIndex, matchCount: state.matches.length } : null);
+  }, [prevMatch, getSearchState]);
 
   return (
     <div className="h-full flex flex-col bg-surface">
@@ -100,7 +159,17 @@ export function Scratchpad() {
       {showToolbar && <TiptapToolbar editor={editor} />}
 
       {/* Tiptap editor */}
-      <div className="tiptap-editor flex-1 min-h-0 overflow-auto">
+      <div className="tiptap-editor flex-1 min-h-0 overflow-auto relative">
+        {searchBar && (
+          <SearchHighlightBar
+            query={searchBar.query}
+            matchCount={searchBar.matchCount}
+            currentIndex={searchBar.currentIndex}
+            onNext={handleNextMatch}
+            onPrev={handlePrevMatch}
+            onClose={handleDismissSearch}
+          />
+        )}
         <EditorContent editor={editor} />
       </div>
 

@@ -71,10 +71,11 @@ export function AppShell() {
   }, []);
 
   const handleSearchSelectNote = useCallback(async (noteId: string, query: string) => {
-    // Scratchpad result: deselect note so scratchpad shows
+    // Scratchpad result: deselect note so scratchpad shows, pass search query
     if (noteId === '__scratchpad__') {
       setSelectedNoteId(null);
       setSelectedNotebookId(null);
+      setEditorSearchQuery(query);
       setMobileView('editor');
       return;
     }
@@ -160,7 +161,7 @@ export function AppShell() {
                   onClearSearch={handleClearEditorSearch}
                 />
               ) : (
-                <Scratchpad />
+                <Scratchpad searchQuery={editorSearchQuery} onClearSearch={handleClearEditorSearch} />
               )}
             </div>
           </div>
@@ -242,7 +243,7 @@ export function AppShell() {
                 onClearSearch={handleClearEditorSearch}
               />
             ) : (
-              <Scratchpad />
+              <Scratchpad searchQuery={editorSearchQuery} onClearSearch={handleClearEditorSearch} />
             )
           )}
         </div>
