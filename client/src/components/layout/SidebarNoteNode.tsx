@@ -10,6 +10,7 @@ import {
   Folder,
   Star,
   StarOff,
+  Pin,
 } from 'lucide-react';
 import type { FlatNoteNode } from '../../utils/flattenNotebookTree';
 import type { Notebook } from '../../types/notebook';
@@ -93,6 +94,7 @@ export function SidebarNoteNode({
 
       <span className="w-4.5" />
       <FileText className="w-4 h-4 shrink-0 text-ink-faint" />
+      {node.note.isPinned && <Pin className="w-3 h-3 shrink-0 text-amber-400 -rotate-45" />}
       <span className="flex-1 text-sm truncate">{node.note.title}</span>
 
       <div className="relative">

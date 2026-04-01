@@ -10,6 +10,7 @@ import {
   Folder,
   Star,
   StarOff,
+  Pin,
 } from 'lucide-react';
 import type { NoteSummary } from '../../types/note';
 import type { Notebook } from '../../types/notebook';
@@ -67,6 +68,7 @@ export function SidebarRootNote({
       onContextMenu={handleContextMenu}
     >
       <FileText className="w-4 h-4 shrink-0 text-ink-faint" />
+      {note.isPinned && <Pin className="w-3 h-3 shrink-0 text-amber-400 -rotate-45" />}
       <span className="flex-1 text-sm truncate">{note.title}</span>
 
       <div className="relative">
