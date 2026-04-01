@@ -26,6 +26,10 @@ export async function searchNotes(query: string, filters: SearchFilters) {
 
   const tsquery = Prisma.sql`plainto_tsquery('english', ${query})`;
 
+  // Strip HTML tags before building tsvectors — notes are stored as HTML
+  // but to_tsvector needs plain text for correct tokenization.
+  const stripHtml = Prisma.sql`regexp_replace(n.content, '<[^>]+>', ' ', 'g')`;
+
   const results = await prisma.$queryRaw<SearchResult[]>`
     SELECT
       n.id,
@@ -35,12 +39,12 @@ export async function searchNotes(query: string, filters: SearchFilters) {
       n.updated_at AS "updatedAt",
       ts_rank(
         setweight(to_tsvector('english', coalesce(n.title, '')), 'A') ||
-        setweight(to_tsvector('english', coalesce(n.content, '')), 'B'),
+        setweight(to_tsvector('english', coalesce(${stripHtml}, '')), 'B'),
         ${tsquery}
       ) AS rank,
       ts_headline(
         'english',
-        regexp_replace(n.content, '<[^>]+>', ' ', 'g'),
+        ${stripHtml},
         ${tsquery},
         'StartSel=<mark>, StopSel=</mark>, MaxWords=60, MinWords=20, MaxFragments=2'
       ) AS headline
@@ -48,7 +52,7 @@ export async function searchNotes(query: string, filters: SearchFilters) {
     LEFT JOIN notebooks nb ON nb.id = n.notebook_id
     WHERE (
       setweight(to_tsvector('english', coalesce(n.title, '')), 'A') ||
-      setweight(to_tsvector('english', coalesce(n.content, '')), 'B')
+      setweight(to_tsvector('english', coalesce(${stripHtml}, '')), 'B')
     ) @@ ${tsquery}
     ${notebookFilter}
     ORDER BY rank DESC
@@ -61,7 +65,7 @@ export async function searchNotes(query: string, filters: SearchFilters) {
     FROM notes n
     WHERE (
       setweight(to_tsvector('english', coalesce(n.title, '')), 'A') ||
-      setweight(to_tsvector('english', coalesce(n.content, '')), 'B')
+      setweight(to_tsvector('english', coalesce(${stripHtml}, '')), 'B')
     ) @@ ${tsquery}
     ${notebookFilter}
   `;
