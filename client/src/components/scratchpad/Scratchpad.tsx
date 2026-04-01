@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Pencil, Type } from 'lucide-react';
+import { Pencil, Type, EllipsisVertical } from 'lucide-react';
 import { EditorContent } from '@tiptap/react';
 import { getScratchpad, updateScratchpad } from '../../api/scratchpad';
 import { useTiptap } from '../../hooks/useTiptap';
@@ -23,6 +23,8 @@ export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
     const stored = localStorage.getItem(TOOLBAR_KEY);
     return stored === null ? true : stored === 'true';
   });
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
   const [searchBar, setSearchBar] = useState<{ query: string; matchCount: number; currentIndex: number } | null>(null);
   const pendingSearchRef = useRef<string | null>(null);
   const contentLoadedRef = useRef(false);
@@ -134,30 +136,61 @@ export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
     setSearchBar((prev) => prev ? { ...prev, currentIndex: state.currentIndex, matchCount: state.matches.length } : null);
   }, [prevMatch, getSearchState]);
 
+  // Close action menu on click outside
+  useEffect(() => {
+    if (!showActionMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setShowActionMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showActionMenu]);
+
   return (
     <div className="h-full flex flex-col bg-surface">
       {/* Header with inline toolbar */}
-      <div className="flex items-center flex-wrap gap-0.5 px-3 py-1.5 border-b border-edge">
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge">
         <Pencil className="w-4 h-4 text-ink-faint mr-1 shrink-0" />
         <h2 className="text-sm font-medium text-ink-secondary mr-2 shrink-0">Scratchpad</h2>
-        <div className="ml-auto shrink-0">
+        {showToolbar && <TiptapToolbar editor={editor} inline />}
+        <div className="ml-auto shrink-0" />
+
+        {/* Desktop: toolbar toggle inline */}
+        <button
+          onClick={toggleToolbar}
+          className={`hidden lg:block p-1.5 rounded transition-colors ${
+            showToolbar
+              ? 'text-accent bg-accent/10'
+              : 'text-ink-faint hover:text-ink hover:bg-hover'
+          }`}
+          title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
+        >
+          <Type className="w-4 h-4" />
+        </button>
+
+        {/* Mobile: overflow menu */}
+        <div ref={actionMenuRef} className="relative lg:hidden shrink-0">
           <button
-            onClick={toggleToolbar}
-            className={`p-1.5 rounded transition-colors ${
-              showToolbar
-                ? 'text-accent bg-accent/10'
-                : 'text-ink-faint hover:text-ink hover:bg-hover'
-            }`}
-            title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
+            onClick={() => setShowActionMenu((p) => !p)}
+            className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+            title="More actions"
           >
-            <Type className="w-4 h-4" />
+            <EllipsisVertical className="w-4 h-4" />
           </button>
+          {showActionMenu && (
+            <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-card border border-edge rounded-lg shadow-lg py-1">
+              <button
+                onClick={() => { toggleToolbar(); setShowActionMenu(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-secondary hover:bg-hover"
+              >
+                <Type className="w-4 h-4" />
+                {showToolbar ? 'Hide toolbar' : 'Show toolbar'}
+              </button>
+            </div>
+          )}
         </div>
-        {showToolbar && (
-          <div className="flex items-center gap-0.5 w-full lg:w-auto lg:order-[-1]">
-            <TiptapToolbar editor={editor} inline />
-          </div>
-        )}
       </div>
 
       {/* Tiptap editor */}

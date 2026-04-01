@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type, ListTree } from 'lucide-react';
+import { Trash2, Pin, PinOff, Maximize2, Minimize2, Type, ListTree, EllipsisVertical } from 'lucide-react';
 import { EditorContent } from '@tiptap/react';
 import type { Editor } from '@tiptap/react';
 
@@ -47,6 +47,8 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   const pendingSearchRef = useRef<string | null>(null);
   const [blockEditor, setBlockEditor] = useState<Editor | null>(null);
   const activateBlockRef = useRef<((index: number) => void) | null>(null);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
 
   const handleChange = useCallback(
     (html: string) => {
@@ -224,18 +226,32 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     setSearchBar((prev) => prev ? { ...prev, currentIndex: state.currentIndex, matchCount: state.matches.length } : null);
   }, [prevMatch, getSearchState]);
 
+  // Close action menu on click outside
+  useEffect(() => {
+    if (!showActionMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target as Node)) {
+        setShowActionMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showActionMenu]);
+
   return (
     <div className="h-full flex flex-col bg-surface">
-      {/* Action bar with inline formatting toolbar */}
-      <div className="flex items-center flex-wrap gap-0.5 px-3 py-1.5 border-b border-edge">
-        {/* Spacer pushes action buttons to the right on the first line */}
-        <div className="ml-auto" />
+      {/* Action bar */}
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge">
+        {/* Formatting toolbar */}
+        {showToolbar && <TiptapToolbar editor={isLargeNote ? blockEditor : editor} inline />}
 
-        {/* Right-side actions */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="ml-auto shrink-0" />
+
+        {/* Desktop: all action buttons inline */}
+        <div className="hidden lg:flex items-center gap-0.5">
           <button
             onClick={toggleToc}
-  className={`p-1.5 rounded transition-colors ${
+            className={`p-1.5 rounded transition-colors ${
               showToc
                 ? 'text-accent bg-accent/10'
                 : 'text-ink-faint hover:text-ink hover:bg-hover'
@@ -296,12 +312,59 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           </button>
         </div>
 
-        {/* Formatting toolbar — wraps to second line on narrow screens */}
-        {showToolbar && (
-          <div className="flex items-center gap-0.5 w-full lg:w-auto lg:order-first">
-            <TiptapToolbar editor={isLargeNote ? blockEditor : editor} inline />
-          </div>
-        )}
+        {/* Mobile: overflow menu */}
+        <div ref={actionMenuRef} className="relative lg:hidden shrink-0">
+          <button
+            onClick={() => setShowActionMenu((p) => !p)}
+            className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+            title="More actions"
+          >
+            <EllipsisVertical className="w-4 h-4" />
+          </button>
+          {showActionMenu && (
+            <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-card border border-edge rounded-lg shadow-lg py-1">
+              <button
+                onClick={() => { toggleToc(); setShowActionMenu(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-secondary hover:bg-hover"
+              >
+                <ListTree className="w-4 h-4" />
+                {showToc ? 'Hide contents' : 'Table of contents'}
+              </button>
+              <button
+                onClick={() => { toggleToolbar(); setShowActionMenu(false); }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-secondary hover:bg-hover"
+              >
+                <Type className="w-4 h-4" />
+                {showToolbar ? 'Hide toolbar' : 'Show toolbar'}
+              </button>
+              <button
+                onClick={() => {
+                  if (noteId && note) {
+                    pinMutation.mutate({ id: noteId, isPinned: !note.isPinned });
+                  }
+                  setShowActionMenu(false);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-ink-secondary hover:bg-hover"
+              >
+                {note?.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                {note?.isPinned ? 'Unpin' : 'Pin'}
+              </button>
+              <div className="h-px bg-edge my-1" />
+              <button
+                onClick={() => {
+                  if (noteId && confirm('Delete this note?')) {
+                    deleteMutation.mutate(noteId);
+                  }
+                  setShowActionMenu(false);
+                }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-danger hover:bg-hover"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Editor area */}
