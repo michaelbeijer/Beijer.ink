@@ -19,7 +19,9 @@ A personal note-taking web app with a WYSIWYG rich text editor, full-text search
 
 - **WYSIWYG rich text editor** — Tiptap-based editor where bold text looks bold, headings look like headings, tables are visual grids, and task lists have checkboxes — no Markdown syntax required
 - **Block-level editing** — Large documents (50KB+) render as fast static HTML; clicking any block activates just that block in a live editor, preventing browser freezes on very large notes
-- **Formatting toolbar** — Toggleable toolbar for bold, italic, underline, strikethrough, headings, code, links, lists, blockquotes, tables, and horizontal rules; buttons highlight to show active formats
+- **Formatting toolbar** — Toggleable toolbar for bold, italic, underline, strikethrough, headings, code, links, lists, blockquotes, tables, and horizontal rules; buttons highlight to show active formats; available in both the note editor and scratchpad
+- **Table of contents** — Auto-generated panel listing all headings with click-to-jump navigation; toggle via the tree icon in the action bar
+- **Table editing** — Right-click inside a table for a context menu to add/delete rows and columns, toggle header rows, merge/split cells, or delete the table
 - **Fullscreen mode** — Expand the editor to fill the entire page; exit with Escape
 - **Global search** — Weighted PostgreSQL FTS across all notes (title boosted over content), with highlighted result snippets
 - **Notebooks** — Organize notes in a hierarchical tree with right-click context menu for moving, renaming, and creating sub-notebooks

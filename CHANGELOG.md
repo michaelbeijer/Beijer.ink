@@ -7,7 +7,25 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.18.0**
+Current Version: **0.19.0**
+
+---
+
+## [0.19.0] — 2026-04-01
+
+### Added
+- **Table of contents panel** — Auto-generated sidebar listing all headings (h1–h3) with indentation; click any heading to jump to it; works in both normal and block mode; toggle via the tree icon in the action bar
+- **Table context menu** — Right-click inside any table for row/column operations: add/delete rows and columns, toggle header row, merge/split cells, delete table
+- **Scratchpad toolbar** — The scratchpad now has the same formatting toolbar as the note editor, toggled via the Type button in the header
+
+### Changed
+- **Toolbar visible by default** — The formatting toolbar now shows by default for new users (existing preference preserved)
+
+### Fixed
+- **Search highlight accuracy** — In-editor search decorations now highlight the correct text; rewrote position mapping to walk ProseMirror document nodes instead of using `textBetween()`
+
+### Improved
+- **Large table performance** — Blocks over 20KB (e.g. large tables) defer serialization to block deactivation instead of every keystroke, keeping typing responsive
 
 ---
 
