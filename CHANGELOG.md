@@ -7,7 +7,26 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.19.0**
+Current Version: **0.19.1**
+
+---
+
+## [0.19.1] — 2026-04-01
+
+### Added
+- **Mobile overflow menu** — Action buttons (TOC, toolbar toggle, pin, delete) collapse into a kebab (`...`) menu on mobile, keeping the toolbar on a single compact line
+- **Scratchpad in global search** — Scratchpad content is now included in search results with a pencil icon; clicking navigates to the scratchpad and highlights matches
+
+### Changed
+- **Merged toolbar and action bar** — Formatting buttons and action buttons now share a single row on desktop instead of two separate bars
+- **Ctrl+K opens search** — The keyboard shortcut now toggles the search dialog open/closed (previously could only close it)
+
+### Fixed
+- **Mobile search dialog overflow** — Search dialog no longer extends off-screen on narrow Android viewports; added `px-4` container padding
+- **Mobile auto-zoom on input focus** — Set search input to `text-base` (16px) and locked viewport with `maximum-scale=1` to prevent Chrome auto-zoom
+- **Mobile layout overflow** — Removed the 118% root font-size scaling that was making the entire mobile layout 18% wider than the viewport
+- **Search indexing HTML tags** — `to_tsvector` now strips HTML tags before indexing, fixing patchy search results
+- **Search highlight in scratchpad** — Clicking a scratchpad search result now highlights and navigates to the match
 
 ---
 
