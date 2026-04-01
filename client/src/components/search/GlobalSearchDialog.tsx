@@ -74,7 +74,7 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Dialog */}
-      <div className="relative w-full max-w-xl bg-surface border border-edge rounded-xl shadow-2xl">
+      <div className="relative w-full max-w-xl mx-3 sm:mx-4 bg-surface border border-edge rounded-xl shadow-2xl">
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-edge">
           <Search className="w-5 h-5 text-ink-faint" />
