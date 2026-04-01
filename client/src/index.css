@@ -271,11 +271,8 @@
   --t-section-label: #2d8a5e;
 }
 
-/* Scale up all rem-based sizing on small screens */
+/* Mobile adjustments */
 @media (max-width: 767px) {
-  html {
-    font-size: 118%;
-  }
   .tiptap-editor .ProseMirror,
   .tiptap-content {
     font-size: 16px;
