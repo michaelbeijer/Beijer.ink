@@ -227,17 +227,15 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   return (
     <div className="h-full flex flex-col bg-surface">
       {/* Action bar with inline formatting toolbar */}
-      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge overflow-x-auto">
-        {/* Formatting toolbar (left) */}
-        {showToolbar && <TiptapToolbar editor={isLargeNote ? blockEditor : editor} inline />}
-
-        <div className="ml-auto shrink-0" />
+      <div className="flex items-center flex-wrap gap-0.5 px-3 py-1.5 border-b border-edge">
+        {/* Spacer pushes action buttons to the right on the first line */}
+        <div className="ml-auto" />
 
         {/* Right-side actions */}
         <div className="flex items-center gap-0.5 shrink-0">
           <button
             onClick={toggleToc}
-            className={`p-1.5 rounded transition-colors ${
+  className={`p-1.5 rounded transition-colors ${
               showToc
                 ? 'text-accent bg-accent/10'
                 : 'text-ink-faint hover:text-ink hover:bg-hover'
@@ -297,6 +295,13 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Formatting toolbar — wraps to second line on narrow screens */}
+        {showToolbar && (
+          <div className="flex items-center gap-0.5 w-full lg:w-auto lg:order-first">
+            <TiptapToolbar editor={isLargeNote ? blockEditor : editor} inline />
+          </div>
+        )}
       </div>
 
       {/* Editor area */}
