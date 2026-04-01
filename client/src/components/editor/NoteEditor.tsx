@@ -227,74 +227,76 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   return (
     <div className="h-full flex flex-col bg-surface">
       {/* Action bar with inline formatting toolbar */}
-      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge">
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge overflow-x-auto">
         {/* Formatting toolbar (left) */}
         {showToolbar && <TiptapToolbar editor={isLargeNote ? blockEditor : editor} inline />}
 
-        <div className="ml-auto" />
+        <div className="ml-auto shrink-0" />
 
         {/* Right-side actions */}
-        <button
-          onClick={toggleToc}
-          className={`p-1.5 rounded transition-colors ${
-            showToc
-              ? 'text-accent bg-accent/10'
-              : 'text-ink-faint hover:text-ink hover:bg-hover'
-          }`}
-          title={showToc ? 'Hide table of contents' : 'Show table of contents'}
-        >
-          <ListTree className="w-4 h-4" />
-        </button>
-        <button
-          onClick={toggleToolbar}
-          className={`p-1.5 rounded transition-colors ${
-            showToolbar
-              ? 'text-accent bg-accent/10'
-              : 'text-ink-faint hover:text-ink hover:bg-hover'
-          }`}
-          title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
-        >
-          <Type className="w-4 h-4" />
-        </button>
-        {onToggleFullscreen && (
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
-            onClick={onToggleFullscreen}
-            className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
-            title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+            onClick={toggleToc}
+            className={`p-1.5 rounded transition-colors ${
+              showToc
+                ? 'text-accent bg-accent/10'
+                : 'text-ink-faint hover:text-ink hover:bg-hover'
+            }`}
+            title={showToc ? 'Hide table of contents' : 'Show table of contents'}
           >
-            {isFullscreen ? (
-              <Minimize2 className="w-4 h-4" />
+            <ListTree className="w-4 h-4" />
+          </button>
+          <button
+            onClick={toggleToolbar}
+            className={`p-1.5 rounded transition-colors ${
+              showToolbar
+                ? 'text-accent bg-accent/10'
+                : 'text-ink-faint hover:text-ink hover:bg-hover'
+            }`}
+            title={showToolbar ? 'Hide formatting toolbar' : 'Show formatting toolbar'}
+          >
+            <Type className="w-4 h-4" />
+          </button>
+          {onToggleFullscreen && (
+            <button
+              onClick={onToggleFullscreen}
+              className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+              title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (noteId && note) {
+                pinMutation.mutate({ id: noteId, isPinned: !note.isPinned });
+              }
+            }}
+            className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+            title={note?.isPinned ? 'Unpin' : 'Pin'}
+          >
+            {note?.isPinned ? (
+              <PinOff className="w-4 h-4" />
             ) : (
-              <Maximize2 className="w-4 h-4" />
+              <Pin className="w-4 h-4" />
             )}
           </button>
-        )}
-        <button
-          onClick={() => {
-            if (noteId && note) {
-              pinMutation.mutate({ id: noteId, isPinned: !note.isPinned });
-            }
-          }}
-          className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
-          title={note?.isPinned ? 'Unpin' : 'Pin'}
-        >
-          {note?.isPinned ? (
-            <PinOff className="w-4 h-4" />
-          ) : (
-            <Pin className="w-4 h-4" />
-          )}
-        </button>
-        <button
-          onClick={() => {
-            if (noteId && confirm('Delete this note?')) {
-              deleteMutation.mutate(noteId);
-            }
-          }}
-          className="p-1.5 text-ink-faint hover:text-danger hover:bg-hover rounded transition-colors"
-          title="Delete note"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+          <button
+            onClick={() => {
+              if (noteId && confirm('Delete this note?')) {
+                deleteMutation.mutate(noteId);
+              }
+            }}
+            className="p-1.5 text-ink-faint hover:text-danger hover:bg-hover rounded transition-colors"
+            title="Delete note"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Editor area */}
