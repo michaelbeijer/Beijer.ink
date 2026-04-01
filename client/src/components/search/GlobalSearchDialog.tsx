@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, X, FileText } from 'lucide-react';
+import { Search, X, FileText, Pencil } from 'lucide-react';
 import { searchNotes } from '../../api/search';
 import type { SearchResult } from '../../types/search';
 
@@ -114,7 +114,11 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
                   className="w-full text-left px-4 py-3 hover:bg-hover transition-colors border-b border-edge-soft"
                 >
                   <div className="flex items-start gap-2">
-                    <FileText className="w-4 h-4 text-ink-faint mt-0.5 shrink-0" />
+                    {result.id === '__scratchpad__' ? (
+                      <Pencil className="w-4 h-4 text-ink-faint mt-0.5 shrink-0" />
+                    ) : (
+                      <FileText className="w-4 h-4 text-ink-faint mt-0.5 shrink-0" />
+                    )}
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-ink truncate">{result.title}</h4>
                       <p className="text-xs text-ink-muted mt-0.5">{result.notebookName || 'Root'}</p>

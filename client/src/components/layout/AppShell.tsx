@@ -71,6 +71,13 @@ export function AppShell() {
   }, []);
 
   const handleSearchSelectNote = useCallback(async (noteId: string, query: string) => {
+    // Scratchpad result: deselect note so scratchpad shows
+    if (noteId === '__scratchpad__') {
+      setSelectedNoteId(null);
+      setSelectedNotebookId(null);
+      setMobileView('editor');
+      return;
+    }
     const note = await getNoteById(noteId);
     if (note) {
       setSelectedNotebookId(note.notebookId);
