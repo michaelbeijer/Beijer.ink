@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DndContext, DragOverlay, pointerWithin } from '@dnd-kit/core';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
@@ -86,6 +86,18 @@ export function AppShell() {
 
   const handleOpenSearch = useCallback(() => {
     setShowSearch(true);
+  }, []);
+
+  // Ctrl+K to toggle search dialog
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch((prev) => !prev);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Desktop: 3-column layout

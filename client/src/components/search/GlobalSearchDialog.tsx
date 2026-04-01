@@ -54,16 +54,11 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
     };
   }, [query, doSearch]);
 
-  // Ctrl+K shortcut
+  // Escape to close
   useEffect(() => {
+    if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        if (isOpen) {
-          onClose();
-        }
-      }
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose();
       }
     }
