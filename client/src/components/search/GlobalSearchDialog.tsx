@@ -84,7 +84,7 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search all notes..."
-            className="flex-1 bg-transparent text-ink placeholder:text-placeholder focus:outline-none"
+            className="flex-1 bg-transparent text-base text-ink placeholder:text-placeholder focus:outline-none"
           />
           {query && (
             <button onClick={() => setQuery('')} className="text-ink-faint hover:text-ink">
