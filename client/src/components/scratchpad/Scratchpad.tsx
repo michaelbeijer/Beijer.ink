@@ -136,10 +136,11 @@ export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
 
   return (
     <div className="h-full flex flex-col bg-surface">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-edge">
-        <Pencil className="w-4 h-4 text-ink-faint" />
-        <h2 className="text-sm font-medium text-ink-secondary">Scratchpad</h2>
+      {/* Header with inline toolbar */}
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge">
+        <Pencil className="w-4 h-4 text-ink-faint mr-1" />
+        <h2 className="text-sm font-medium text-ink-secondary mr-2">Scratchpad</h2>
+        {showToolbar && <TiptapToolbar editor={editor} inline />}
         <div className="ml-auto">
           <button
             onClick={toggleToolbar}
@@ -154,9 +155,6 @@ export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
           </button>
         </div>
       </div>
-
-      {/* Formatting toolbar */}
-      {showToolbar && <TiptapToolbar editor={editor} />}
 
       {/* Tiptap editor */}
       <div className="tiptap-editor flex-1 min-h-0 overflow-auto relative">

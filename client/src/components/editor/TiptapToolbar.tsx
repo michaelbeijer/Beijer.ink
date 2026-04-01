@@ -18,6 +18,7 @@ import type { Editor } from '@tiptap/react';
 
 interface TiptapToolbarProps {
   editor: Editor | null;
+  inline?: boolean;
 }
 
 type ToolbarAction = {
@@ -121,25 +122,31 @@ const actions: ToolbarAction[] = [
   },
 ];
 
-export function TiptapToolbar({ editor }: TiptapToolbarProps) {
+export function TiptapToolbar({ editor, inline }: TiptapToolbarProps) {
   if (!editor) return null;
+
+  const buttons = actions.map((action) => (
+    <button
+      key={action.title}
+      onClick={() => action.action(editor)}
+      className={`p-1.5 rounded transition-colors ${
+        action.isActive?.(editor)
+          ? 'text-accent bg-accent/10'
+          : 'text-ink-faint hover:text-ink-secondary hover:bg-hover'
+      }`}
+      title={action.title}
+    >
+      <action.icon className="w-4 h-4" />
+    </button>
+  ));
+
+  if (inline) {
+    return <>{buttons}</>;
+  }
 
   return (
     <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-edge bg-panel">
-      {actions.map((action) => (
-        <button
-          key={action.title}
-          onClick={() => action.action(editor)}
-          className={`p-1.5 rounded transition-colors ${
-            action.isActive?.(editor)
-              ? 'text-accent bg-accent/10'
-              : 'text-ink-faint hover:text-ink-secondary hover:bg-hover'
-          }`}
-          title={action.title}
-        >
-          <action.icon className="w-4 h-4" />
-        </button>
-      ))}
+      {buttons}
     </div>
   );
 }
