@@ -7,6 +7,7 @@ const themeSwatches: Record<Theme, { bg: string; accent: string }> = {
   dark:     { bg: '#0f172a', accent: '#60a5fa' },
   claude:   { bg: '#ece7de', accent: '#8a7259' },
   evernote: { bg: '#f7f7f5', accent: '#00a82d' },
+  terminal: { bg: '#0c0c0c', accent: '#3bce5a' },
 };
 
 export function ThemePicker() {

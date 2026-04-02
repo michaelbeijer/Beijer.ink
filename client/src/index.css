@@ -226,6 +226,51 @@
   --t-section-label: #00a82d;
 }
 
+/* ── Terminal theme (dark console) ── */
+[data-theme="terminal"] {
+  --t-surface: #0c0c0c;
+  --t-panel: #141414;
+  --t-card: #1a1a1a;
+  --t-active: rgba(50, 205, 50, 0.15);
+  --t-hover: rgba(50, 205, 50, 0.08);
+  --t-muted-bg: #1e1e1e;
+  --t-input-bg: #1a1a1a;
+  --t-accent: #3bce5a;
+  --t-accent-hover: #2eb84a;
+  --t-ink: #d4d4d4;
+  --t-ink-secondary: #a0a0a0;
+  --t-ink-muted: #808080;
+  --t-ink-faint: #5a5a5a;
+  --t-ink-dim: #3a3a3a;
+  --t-danger: #f55;
+  --t-success: #3bce5a;
+  --t-edge: #2a2a2a;
+  --t-edge-soft: #222222;
+  --t-edge-faint: rgba(42, 42, 42, 0.5);
+  --t-guide: rgba(59, 206, 90, 0.3);
+  --t-code-bg: #1e1e1e;
+  --t-selection: rgba(59, 206, 90, 0.18);
+  --t-selection-focused: rgba(59, 206, 90, 0.28);
+  --t-placeholder: #5a5a5a;
+  --t-scrollbar-track: #141414;
+  --t-scrollbar-thumb: #333333;
+  --t-scrollbar-hover: #444444;
+  --t-search-bg: rgba(230, 180, 40, 0.3);
+  --t-search-active: rgba(230, 180, 40, 0.55);
+  --t-search-outline: rgba(230, 180, 40, 0.7);
+  --t-mark-bg: rgba(230, 180, 40, 0.25);
+  --t-mark-text: #f0d060;
+  --t-quote-border: #333333;
+  --t-quote-text: #808080;
+  --t-table-border: #2a2a2a;
+  --t-table-header: #141414;
+  --t-caret: #3bce5a;
+  --t-link: #3bce5a;
+  --t-strikethrough: #5a5a5a;
+  --t-fav-text: #e2c87a;
+  --t-section-label: #3bce5a;
+}
+
 /* Mobile adjustments */
 @media (max-width: 767px) {
   .tiptap-editor .ProseMirror,
