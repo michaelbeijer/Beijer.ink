@@ -376,7 +376,6 @@
   font-size: 1.5em;
   font-weight: 700;
   margin: 1em 0 0.5em;
-  color: var(--t-accent);
 }
 
 .tiptap-editor .ProseMirror h2,
@@ -392,7 +391,6 @@
   font-size: 1.15em;
   font-weight: 600;
   margin: 1em 0 0.5em;
-  color: var(--t-accent);
 }
 
 .tiptap-editor .ProseMirror h4,
@@ -404,7 +402,6 @@
   font-size: 1em;
   font-weight: 600;
   margin: 1em 0 0.5em;
-  color: var(--t-accent);
 }
 
 .tiptap-editor .ProseMirror p,
