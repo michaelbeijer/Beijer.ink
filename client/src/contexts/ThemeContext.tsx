@@ -1,15 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
-export type Theme = 'light' | 'dark' | 'rose' | 'lavender' | 'mint';
+export type Theme = 'light' | 'dark' | 'claude' | 'evernote';
 
-export const THEMES: Theme[] = ['light', 'dark', 'rose', 'lavender', 'mint'];
+export const THEMES: Theme[] = ['light', 'dark', 'claude', 'evernote'];
 
 export const themeLabels: Record<Theme, string> = {
   light: 'Light',
   dark: 'Dark',
-  rose: 'Rose',
-  lavender: 'Lavender',
-  mint: 'Mint',
+  claude: 'Claude',
+  evernote: 'Evernote',
 };
 
 interface ThemeContextType {

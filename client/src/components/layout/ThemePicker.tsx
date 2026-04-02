@@ -5,9 +5,8 @@ import { useTheme, THEMES, themeLabels, type Theme } from '../../contexts/ThemeC
 const themeSwatches: Record<Theme, { bg: string; accent: string }> = {
   light:    { bg: '#f8fafc', accent: '#2563eb' },
   dark:     { bg: '#0f172a', accent: '#60a5fa' },
-  rose:     { bg: '#f9ede3', accent: '#c2705a' },
-  lavender: { bg: '#f0ecf5', accent: '#7c5cbf' },
-  mint:     { bg: '#e8f3ed', accent: '#2d8a5e' },
+  claude:   { bg: '#ece7de', accent: '#8a7259' },
+  evernote: { bg: '#f7f7f5', accent: '#00a82d' },
 };
 
 export function ThemePicker() {
