@@ -275,7 +275,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
             <button
               onClick={onToggleFullscreen}
               className="p-1.5 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
-              title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen'}
+              title={isFullscreen ? 'Exit fullscreen (F11 / Esc)' : 'Fullscreen (F11)'}
             >
               {isFullscreen ? (
                 <Minimize2 className="w-4 h-4" />

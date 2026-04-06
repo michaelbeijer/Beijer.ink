@@ -96,12 +96,16 @@ export function AppShell() {
     setShowSearch(true);
   }, []);
 
-  // Ctrl+K to toggle search dialog
+  // Ctrl+K to toggle search dialog, F11 to toggle fullscreen
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setShowSearch((prev) => !prev);
+      }
+      if (e.key === 'F11') {
+        e.preventDefault();
+        setIsFullscreen((prev) => !prev);
       }
     }
     document.addEventListener('keydown', handleKeyDown);
