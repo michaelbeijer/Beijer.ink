@@ -7,7 +7,17 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.19.2**
+Current Version: **0.19.3**
+
+---
+
+## [0.19.3] — 2026-04-06
+
+### Fixed
+- **Editor centering in fullscreen mode** — content now properly centers at 850px in fullscreen, not just in sidebar mode. Uses explicit wrapper divs instead of CSS flex centering which was blocked by Tiptap's intermediate DOM wrapper
+
+### Changed
+- **Evernote theme link colour** — changed from green to blue to match the Light theme
 
 ---
 
