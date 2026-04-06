@@ -406,7 +406,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           />
         ) : (
           <div className="tiptap-editor w-full min-h-0 overflow-auto">
-            <EditorContent editor={editor} />
+            <div className="mx-auto" style={{ maxWidth: 850 }}>
+              <EditorContent editor={editor} />
+            </div>
           </div>
         )}
       </div>

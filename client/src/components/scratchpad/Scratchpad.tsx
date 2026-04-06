@@ -205,7 +205,9 @@ export function Scratchpad({ searchQuery, onClearSearch }: ScratchpadProps) {
             onClose={handleDismissSearch}
           />
         )}
-        <EditorContent editor={editor} />
+        <div className="mx-auto" style={{ maxWidth: 850 }}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {/* Table context menu */}

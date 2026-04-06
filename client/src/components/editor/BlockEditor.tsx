@@ -299,8 +299,8 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
   return (
     <div
       ref={containerRef}
-      className="tiptap-content w-full min-h-0 overflow-auto py-4 cursor-text"
-      style={{ maxWidth: 850, marginLeft: 'auto', marginRight: 'auto', padding: '16px 32px' }}
+      className="tiptap-content w-full min-h-0 overflow-auto py-4 cursor-text mx-auto"
+      style={{ maxWidth: 850, padding: '16px 32px' }}
       onClick={handleClick}
     >
       <div data-block-section="before" dangerouslySetInnerHTML={{ __html: beforeHtml }} />
