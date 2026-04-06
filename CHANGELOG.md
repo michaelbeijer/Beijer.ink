@@ -7,7 +7,14 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.19.1**
+Current Version: **0.19.2**
+
+---
+
+## [0.19.2] — 2026-04-06
+
+### Changed
+- **Centered editor layout** — note content is now centered with a max-width of 850px (like Evernote), with more generous padding, instead of stretching edge-to-edge on wide screens. Applies to normal notes, large block-mode notes, and the scratchpad
 
 ---
 
