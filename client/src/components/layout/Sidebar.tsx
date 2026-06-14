@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { PenLine, FolderPlus, FilePlus, LogOut, Settings, Github } from 'lucide-react';
+import { PenLine, FolderPlus, FilePlus, LayoutGrid, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
+import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemePicker } from './ThemePicker';
 import { flattenNotebookTree } from '../../utils/flattenNotebookTree';
@@ -18,15 +19,18 @@ import type { Notebook } from '../../types/notebook';
 interface SidebarProps {
   selectedNotebookId: string | null;
   selectedNoteId: string | null;
+  selectedBoardId?: string | null;
   onSelectNotebook: (id: string) => void;
   onSelectNote: (noteId: string) => void;
   onSelectRootNote: (noteId: string) => void;
+  onSelectBoard?: (id: string) => void;
+  onBoardDeleted?: (id: string) => void;
   autoExpandNotebookId?: string | null;
   onOpenSettings?: () => void;
   onClose?: () => void;
 }
 
-export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, onSelectNote, onSelectRootNote, autoExpandNotebookId, onOpenSettings, onClose }: SidebarProps) {
+export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, onSelectNotebook, onSelectNote, onSelectRootNote, onSelectBoard, onBoardDeleted, autoExpandNotebookId, onOpenSettings, onClose }: SidebarProps) {
   const queryClient = useQueryClient();
   const { logout } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -290,12 +294,48 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
     queryFn: getFavoriteNotes,
   });
 
+  const { data: boards = [] } = useQuery({
+    queryKey: ['boards'],
+    queryFn: getBoards,
+  });
+
+  const createBoardMutation = useMutation({
+    mutationFn: () => createBoard({ name: 'Untitled board' }),
+    onSuccess: (board) => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      onSelectBoard?.(board.id);
+    },
+  });
+
+  const deleteBoardMutation = useMutation({
+    mutationFn: deleteBoard,
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      onBoardDeleted?.(id);
+    },
+  });
+
+  const toggleBoardFavoriteMutation = useMutation({
+    mutationFn: ({ id, isFavorite }: { id: string; isFavorite: boolean }) =>
+      updateBoard(id, { isFavorite }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['boards'] }),
+  });
+
+  function handleDeleteBoard(id: string, name: string) {
+    if (confirm(`Delete board "${name}" and all its lists and cards?`)) {
+      deleteBoardMutation.mutate(id);
+    }
+  }
+
+  const favoriteBoards = useMemo(() => boards.filter((b) => b.isFavorite), [boards]);
+
   const favoriteNotebooks = useMemo(
     () => notebooks.filter((nb) => nb.isFavorite),
     [notebooks]
   );
 
-  const hasFavourites = favoriteNotebooks.length > 0 || favoriteNotesData.length > 0;
+  const hasFavourites =
+    favoriteNotebooks.length > 0 || favoriteNotesData.length > 0 || favoriteBoards.length > 0;
 
   const { setNodeRef: setRootDropRef, isOver: isOverRootDrop } = useDroppable({
     id: 'root-drop-zone',
@@ -327,6 +367,13 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
             title="New notebook"
           >
             <FolderPlus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => createBoardMutation.mutate()}
+            className="p-1 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+            title="New board"
+          >
+            <LayoutGrid className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -382,6 +429,28 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
                 onRemoveFavorite={() => handleToggleNoteFavorite(note.id, true)}
                 onContextMenu={setContextMenuId}
               />
+            ))}
+            {favoriteBoards.map((board) => (
+              <div
+                key={`fav-board-${board.id}`}
+                onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
+                className={`group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
+                  board.id === selectedBoardId ? 'bg-active' : 'hover:bg-hover'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 text-ink-faint shrink-0" />
+                <span className="flex-1 truncate text-sm text-ink">{board.name}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleBoardFavoriteMutation.mutate({ id: board.id, isFavorite: false });
+                  }}
+                  className="text-fav-text"
+                  title="Remove from favourites"
+                >
+                  <Star className="w-3.5 h-3.5" fill="currentColor" />
+                </button>
+              </div>
             ))}
             <div className="my-1.5" />
           </>
@@ -495,6 +564,51 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, onSelectNotebook, 
                 onMoveToNotebook={handleMoveNoteToNotebook}
                 onToggleFavorite={handleToggleNoteFavorite}
               />
+            ))}
+          </>
+        )}
+
+        {/* Boards */}
+        {boards.length > 0 && (
+          <>
+            <div className="mt-2 mb-1 px-2">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
+                Boards
+              </span>
+            </div>
+            {boards.map((board) => (
+              <div
+                key={`board-${board.id}`}
+                onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
+                className={`group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
+                  board.id === selectedBoardId ? 'bg-active' : 'hover:bg-hover'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 text-ink-faint shrink-0" />
+                <span className="flex-1 truncate text-sm text-ink">{board.name}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleBoardFavoriteMutation.mutate({ id: board.id, isFavorite: !board.isFavorite });
+                  }}
+                  className={`${
+                    board.isFavorite ? 'text-fav-text' : 'text-ink-faint opacity-0 group-hover:opacity-100'
+                  } transition-opacity`}
+                  title={board.isFavorite ? 'Remove from favourites' : 'Add to favourites'}
+                >
+                  <Star className="w-3.5 h-3.5" fill={board.isFavorite ? 'currentColor' : 'none'} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteBoard(board.id, board.name);
+                  }}
+                  className="text-ink-faint hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete board"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))}
           </>
         )}

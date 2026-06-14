@@ -7,11 +7,20 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.19.3**
+Current Version: **0.20.0**
 
 ---
 
-## [0.19.3] — 2026-04-06
+## [0.20.0] — 2026-06-14
+
+### Added
+- **Kanban boards** — A Trello-style board feature. Boards are a new top-level item alongside notebooks (create from the sidebar header, rename in the board header, favourite, delete). Each board has lists (columns) of cards.
+  - **Drag-and-drop** — Reorder cards within a list, move cards between lists, and reorder lists themselves. Ordering is persisted server-side.
+  - **Cards** — Title, description, due date (with overdue/soon/done states), board-level colour labels, and a checklist with a progress bar.
+  - **Note integration** — Any card can link to a note: "Create note from card" makes a linked note, "Link existing note" finds one via search, and clicking a linked card's note opens it in the editor. Deleting a note simply unlinks its cards.
+
+### Database
+- New additive tables `boards`, `board_columns`, `cards` (migration `add_kanban_boards`). No changes to existing tables.
 
 ### Fixed
 - **Editor centering in fullscreen mode** — content now properly centers at 850px in fullscreen, not just in sidebar mode. Uses explicit wrapper divs instead of CSS flex centering which was blocked by Tiptap's intermediate DOM wrapper

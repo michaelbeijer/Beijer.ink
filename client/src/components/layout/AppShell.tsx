@@ -8,6 +8,7 @@ import { MobileNav } from './MobileNav';
 import { DragOverlayContent } from './DragOverlayContent';
 import { ResizeDivider } from './ResizeDivider';
 import { NoteEditor } from '../editor/NoteEditor';
+import { BoardView } from '../board/BoardView';
 import { Scratchpad } from '../scratchpad/Scratchpad';
 import { GlobalSearchDialog } from '../search/GlobalSearchDialog';
 import { SettingsDialog } from '../settings/SettingsDialog';
@@ -22,6 +23,7 @@ type MobileView = 'sidebar' | 'editor';
 export function AppShell() {
   const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editorSearchQuery, setEditorSearchQuery] = useState<string | null>(null);
@@ -53,13 +55,36 @@ export function AppShell() {
   }, []);
 
   const handleSelectNote = useCallback((id: string) => {
+    setSelectedBoardId(null);
     setSelectedNoteId(id);
     setEditorSearchQuery(null);
     setMobileView('editor');
   }, []);
 
   const handleSelectRootNote = useCallback((noteId: string) => {
+    setSelectedBoardId(null);
     setSelectedNotebookId(null);
+    setSelectedNoteId(noteId);
+    setEditorSearchQuery(null);
+    setMobileView('editor');
+  }, []);
+
+  const handleSelectBoard = useCallback((id: string) => {
+    setSelectedBoardId(id);
+    setSelectedNoteId(null);
+    setEditorSearchQuery(null);
+    setMobileView('editor');
+  }, []);
+
+  const handleBoardDeleted = useCallback((id: string) => {
+    setSelectedBoardId((prev) => (prev === id ? null : prev));
+  }, []);
+
+  // Open a card's linked note in the editor (jump out of the board view).
+  const handleOpenLinkedNote = useCallback(async (noteId: string) => {
+    setSelectedBoardId(null);
+    const note = await getNoteById(noteId);
+    setSelectedNotebookId(note?.notebookId ?? null);
     setSelectedNoteId(noteId);
     setEditorSearchQuery(null);
     setMobileView('editor');
@@ -73,6 +98,7 @@ export function AppShell() {
   const handleSearchSelectNote = useCallback(async (noteId: string, query: string) => {
     // Scratchpad result: deselect note so scratchpad shows, pass search query
     if (noteId === '__scratchpad__') {
+      setSelectedBoardId(null);
       setSelectedNoteId(null);
       setSelectedNotebookId(null);
       setEditorSearchQuery(query);
@@ -81,6 +107,7 @@ export function AppShell() {
     }
     const note = await getNoteById(noteId);
     if (note) {
+      setSelectedBoardId(null);
       setSelectedNotebookId(note.notebookId);
       setSelectedNoteId(noteId);
       setEditorSearchQuery(query);
@@ -130,9 +157,12 @@ export function AppShell() {
                 <Sidebar
                   selectedNotebookId={selectedNotebookId}
                   selectedNoteId={selectedNoteId}
+                  selectedBoardId={selectedBoardId}
                   onSelectNotebook={handleSelectNotebook}
                   onSelectNote={handleSelectNote}
                   onSelectRootNote={handleSelectRootNote}
+                  onSelectBoard={handleSelectBoard}
+                  onBoardDeleted={handleBoardDeleted}
                   autoExpandNotebookId={selectedNotebookId}
                   onOpenSettings={() => setShowSettings(true)}
                 />
@@ -155,7 +185,9 @@ export function AppShell() {
             </div>
 
             <div className="flex-1 min-h-0">
-              {selectedNoteId ? (
+              {selectedBoardId ? (
+                <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
+              ) : selectedNoteId ? (
                 <NoteEditor
                   noteId={selectedNoteId}
                   onNoteDeleted={handleNoteDeleted}
@@ -212,6 +244,7 @@ export function AppShell() {
                 <Sidebar
                   selectedNotebookId={selectedNotebookId}
                   selectedNoteId={selectedNoteId}
+                  selectedBoardId={selectedBoardId}
                   onSelectNotebook={handleSelectNotebook}
                   onSelectNote={(noteId) => {
                     handleSelectNote(noteId);
@@ -221,6 +254,11 @@ export function AppShell() {
                     handleSelectRootNote(id);
                     setSidebarOpen(false);
                   }}
+                  onSelectBoard={(id) => {
+                    handleSelectBoard(id);
+                    setSidebarOpen(false);
+                  }}
+                  onBoardDeleted={handleBoardDeleted}
                   onOpenSettings={() => { setShowSettings(true); setSidebarOpen(false); }}
                 />
               </div>
@@ -231,15 +269,20 @@ export function AppShell() {
             <Sidebar
               selectedNotebookId={selectedNotebookId}
               selectedNoteId={selectedNoteId}
+              selectedBoardId={selectedBoardId}
               onSelectNotebook={handleSelectNotebook}
               onSelectNote={handleSelectNote}
               onSelectRootNote={handleSelectRootNote}
+              onSelectBoard={handleSelectBoard}
+              onBoardDeleted={handleBoardDeleted}
               onOpenSettings={() => setShowSettings(true)}
             />
           )}
 
           {mobileView === 'editor' && (
-            selectedNoteId ? (
+            selectedBoardId ? (
+              <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
+            ) : selectedNoteId ? (
               <NoteEditor
                 noteId={selectedNoteId}
                 onNoteDeleted={handleNoteDeleted}

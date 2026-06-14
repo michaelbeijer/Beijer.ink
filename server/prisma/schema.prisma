@@ -55,10 +55,60 @@ model Note {
   isPinned   Boolean   @default(false) @map("is_pinned")
   isFavorite Boolean   @default(false) @map("is_favorite")
   sortOrder  Int       @default(0) @map("sort_order")
+  cards      Card[]
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
   @@index([notebookId])
   @@index([updatedAt])
   @@map("notes")
+}
+
+model Board {
+  id         String        @id @default(cuid())
+  name       String        @default("Untitled board")
+  icon       String?       @default("layout-grid")
+  sortOrder  Int           @default(0) @map("sort_order")
+  isFavorite Boolean       @default(false) @map("is_favorite")
+  labels     Json          @default("[]") // [{ id, name, color }] — board-level label definitions
+  columns    BoardColumn[]
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  @@map("boards")
+}
+
+model BoardColumn {
+  id        String   @id @default(cuid())
+  boardId   String   @map("board_id")
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  name      String   @default("New list")
+  sortOrder Int      @default(0) @map("sort_order")
+  cards     Card[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([boardId])
+  @@map("board_columns")
+}
+
+model Card {
+  id          String      @id @default(cuid())
+  columnId    String      @map("column_id")
+  column      BoardColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  title       String      @default("")
+  description String      @default("")
+  sortOrder   Int         @default(0) @map("sort_order")
+  dueDate     DateTime?   @map("due_date")
+  dueDone     Boolean     @default(false) @map("due_done")
+  labelIds    Json        @default("[]") // string[] referencing Board.labels[].id
+  checklist   Json        @default("[]") // [{ id, text, done }]
+  noteId      String?     @map("note_id")
+  note        Note?       @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@index([columnId])
+  @@index([noteId])
+  @@map("cards")
 }
