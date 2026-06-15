@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
+import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, CheckSquare, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
-import { getBoards, createBoard, deleteBoard, updateBoard, deleteColumn, updateColumn } from '../../api/boards';
+import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
+import type { BoardType } from '../../types/board';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemePicker } from './ThemePicker';
 import { flattenNotebookTree } from '../../utils/flattenNotebookTree';
@@ -299,24 +300,25 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     queryFn: getBoards,
   });
 
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
+
   const createBoardMutation = useMutation({
-    mutationFn: () => createBoard({ name: 'Untitled board' }),
+    mutationFn: (type: BoardType) => createBoard({ type }),
     onSuccess: (board) => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
       onSelectBoard?.(board.id);
     },
   });
 
-  // "New year board": a board pre-set to show every week of a year, with a
-  // ready label palette — open it on the week-grouped Kanban straight away.
-  const createYearBoardMutation = useMutation({
+  // Calendar board: server-side type, pre-set year, a ready label palette, and
+  // opens on the week-grouped Kanban straight away.
+  const createCalendarBoardMutation = useMutation({
     mutationFn: async (yr: number) => {
-      const board = await createBoard({ name: `Calendar ${yr}` });
-      // Year boards group by week (date-driven), so the seeded To do/Doing/Done
-      // lists are noise — collapse to a single neutral home list.
-      const cols = board.columns ?? [];
-      for (let i = 1; i < cols.length; i++) await deleteColumn(cols[i].id);
-      if (cols[0]) await updateColumn(cols[0].id, { name: 'Items' });
+      const board = await createBoard({
+        name: `Calendar ${yr}`,
+        type: 'calendar',
+        settings: { year: yr, showOverdue: false },
+      });
       await updateBoard(board.id, {
         labels: [
           { id: crypto.randomUUID(), name: 'Earnings', color: 'green' },
@@ -328,7 +330,6 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
       try {
         localStorage.setItem(`bink:board:${board.id}:view`, 'kanban');
         localStorage.setItem(`bink:board:${board.id}:groupBy`, 'week');
-        localStorage.setItem(`bink:board:${board.id}:year`, String(yr));
       } catch { /* ignore storage errors */ }
       return board;
     },
@@ -338,12 +339,17 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     },
   });
 
-  function handleNewYearBoard() {
-    const input = window.prompt('New year board — which year?', String(new Date().getFullYear()));
-    if (!input) return;
-    const yr = parseInt(input, 10);
-    if (!yr || yr < 1970 || yr > 3000) return;
-    createYearBoardMutation.mutate(yr);
+  function handleNewBoard(type: BoardType) {
+    setBoardMenuOpen(false);
+    if (type === 'calendar') {
+      const input = window.prompt('New calendar board — which year?', String(new Date().getFullYear()));
+      if (!input) return;
+      const yr = parseInt(input, 10);
+      if (!yr || yr < 1970 || yr > 3000) return;
+      createCalendarBoardMutation.mutate(yr);
+    } else {
+      createBoardMutation.mutate(type);
+    }
   }
 
   const deleteBoardMutation = useMutation({
@@ -407,20 +413,40 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
           >
             <FolderPlus className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => createBoardMutation.mutate()}
-            className="p-1 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
-            title="New board"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleNewYearBoard}
-            className="p-1 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
-            title="New year board (all weeks pre-filled)"
-          >
-            <CalendarRange className="w-4 h-4" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setBoardMenuOpen((v) => !v)}
+              className="p-1 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+              title="New board"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            {boardMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setBoardMenuOpen(false)} />
+                <div className="absolute right-0 mt-1 z-20 w-44 bg-surface border border-edge rounded-md shadow-lg py-1">
+                  <button
+                    onClick={() => handleNewBoard('freeform')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-ink hover:bg-hover text-left"
+                  >
+                    <LayoutGrid className="w-4 h-4 text-ink-faint" /> Free-form board
+                  </button>
+                  <button
+                    onClick={() => handleNewBoard('todo')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-ink hover:bg-hover text-left"
+                  >
+                    <CheckSquare className="w-4 h-4 text-ink-faint" /> To-do board
+                  </button>
+                  <button
+                    onClick={() => handleNewBoard('calendar')}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-ink hover:bg-hover text-left"
+                  >
+                    <CalendarRange className="w-4 h-4 text-ink-faint" /> Calendar board
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

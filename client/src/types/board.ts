@@ -10,13 +10,24 @@ export interface ChecklistItem {
   done: boolean;
 }
 
+/** What kind of board this is — drives default view, lists and behaviour. */
+export type BoardType = 'calendar' | 'todo' | 'freeform';
+
+/** Board-intrinsic settings, stored on the server (consistent across devices). */
+export interface BoardSettings {
+  year?: number | null;
+  showOverdue?: boolean;
+}
+
 /** Lightweight board, used in the sidebar list. */
 export interface BoardSummary {
   id: string;
   name: string;
   icon: string | null;
+  type: BoardType;
   sortOrder: number;
   isFavorite: boolean;
+  settings: BoardSettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,9 +63,11 @@ export interface Board {
   id: string;
   name: string;
   icon: string | null;
+  type: BoardType;
   sortOrder: number;
   isFavorite: boolean;
   labels: Label[];
+  settings: BoardSettings;
   columns: Column[];
   createdAt: string;
   updatedAt: string;

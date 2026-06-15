@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { BoardType } from '../types/board';
 
 export type BoardViewType = 'kanban' | 'calendar' | 'table' | 'list';
 export type KanbanGroupBy = 'list' | 'week';
@@ -20,41 +21,35 @@ function write(key: string, value: string): void {
   }
 }
 
+// Per-type starting view: calendar boards open on the week-grouped Kanban,
+// everything else on the classic list-grouped Kanban.
+function defaultsForType(type?: BoardType): { view: BoardViewType; groupBy: KanbanGroupBy } {
+  if (type === 'calendar') return { view: 'kanban', groupBy: 'week' };
+  return { view: 'kanban', groupBy: 'list' };
+}
+
 /**
- * Per-board UI preferences (which view is shown, and how the kanban is grouped).
- * Pure UI state — persisted in localStorage, never on the server.
+ * Per-device UI preferences (which view is shown, how the kanban is grouped,
+ * month vs week calendar). Pure "what am I looking at right now" state — kept in
+ * localStorage. Defaults are seeded from the board's server-side type so a fresh
+ * device opens the board the right way. Board-intrinsic settings (year, overdue)
+ * live on the server in board.settings, not here.
  */
-export function useBoardViewPrefs(boardId: string) {
+export function useBoardViewPrefs(boardId: string, boardType?: BoardType) {
   const viewKey = `bink:board:${boardId}:view`;
   const groupKey = `bink:board:${boardId}:groupBy`;
   const calKey = `bink:board:${boardId}:calendarMode`;
-  const yearKey = `bink:board:${boardId}:year`;
+  const typeDefaults = defaultsForType(boardType);
 
   const [view, setViewState] = useState<BoardViewType>(
-    () => read(viewKey, 'kanban') as BoardViewType
+    () => read(viewKey, typeDefaults.view) as BoardViewType
   );
   const [groupBy, setGroupByState] = useState<KanbanGroupBy>(
-    () => read(groupKey, 'list') as KanbanGroupBy
+    () => read(groupKey, typeDefaults.groupBy) as KanbanGroupBy
   );
   const [calendarMode, setCalendarModeState] = useState<CalendarMode>(
     () => read(calKey, 'month') as CalendarMode
   );
-  // A "year board" shows every ISO week of that year as a column; null = off.
-  const [year, setYearState] = useState<number | null>(() => {
-    const raw = read(yearKey, '');
-    const n = parseInt(raw, 10);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  });
-  // Overdue rollup on the mobile week view — per board. Defaults OFF for year
-  // boards (they're logs of past weeks) and ON otherwise (to-do-style boards).
-  const overdueKey = `bink:board:${boardId}:showOverdue`;
-  const [showOverdue, setShowOverdueState] = useState<boolean>(() => {
-    const raw = read(overdueKey, '');
-    if (raw === '1') return true;
-    if (raw === '0') return false;
-    const yr = parseInt(read(yearKey, ''), 10);
-    return !(Number.isFinite(yr) && yr > 0);
-  });
 
   const setView = useCallback(
     (v: BoardViewType) => {
@@ -80,27 +75,9 @@ export function useBoardViewPrefs(boardId: string) {
     [calKey]
   );
 
-  const setYear = useCallback(
-    (y: number | null) => {
-      setYearState(y);
-      write(yearKey, y && y > 0 ? String(y) : '');
-    },
-    [yearKey]
-  );
-
-  const setShowOverdue = useCallback(
-    (v: boolean) => {
-      setShowOverdueState(v);
-      write(overdueKey, v ? '1' : '0');
-    },
-    [overdueKey]
-  );
-
   return {
     view, setView,
     groupBy, setGroupBy,
     calendarMode, setCalendarMode,
-    year, setYear,
-    showOverdue, setShowOverdue,
   };
 }

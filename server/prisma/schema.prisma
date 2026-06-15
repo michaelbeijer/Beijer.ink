@@ -68,9 +68,11 @@ model Board {
   id         String        @id @default(cuid())
   name       String        @default("Untitled board")
   icon       String?       @default("layout-grid")
+  type       String        @default("freeform") // 'calendar' | 'todo' | 'freeform'
   sortOrder  Int           @default(0) @map("sort_order")
   isFavorite Boolean       @default(false) @map("is_favorite")
   labels     Json          @default("[]") // [{ id, name, color }] — board-level label definitions
+  settings   Json          @default("{}") // { year?: number|null, showOverdue?: boolean }
   columns    BoardColumn[]
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")

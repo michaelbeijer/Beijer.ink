@@ -4,12 +4,26 @@ import { prisma } from '../lib/prisma.js';
 
 // Trello-style default label palette (names empty until the user names them)
 const DEFAULT_LABEL_COLORS = ['green', 'yellow', 'orange', 'red', 'purple', 'blue'];
-const DEFAULT_COLUMNS = ['To do', 'Doing', 'Done'];
+
+export type BoardType = 'calendar' | 'todo' | 'freeform';
+
+// Each board type gets a starting list layout that fits its purpose.
+// Calendar boards group by week (date-driven) so a single neutral list is enough.
+const COLUMNS_BY_TYPE: Record<BoardType, string[]> = {
+  calendar: ['Items'],
+  todo: ['To do', 'Doing', 'Done'],
+  freeform: ['To do', 'Doing', 'Done'],
+};
 
 interface Label {
   id: string;
   name: string;
   color: string;
+}
+
+interface BoardSettings {
+  year?: number | null;
+  showOverdue?: boolean;
 }
 
 interface ChecklistItem {
@@ -25,8 +39,10 @@ export async function getAllBoards() {
       id: true,
       name: true,
       icon: true,
+      type: true,
       sortOrder: true,
       isFavorite: true,
+      settings: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -52,19 +68,31 @@ export async function getBoard(id: string) {
   });
 }
 
-export async function createBoard(data: { name?: string }) {
+export async function createBoard(data: {
+  name?: string;
+  type?: BoardType;
+  settings?: BoardSettings;
+}) {
   const labels: Label[] = DEFAULT_LABEL_COLORS.map((color) => ({
     id: randomUUID(),
     name: '',
     color,
   }));
+  const type: BoardType = data.type ?? 'freeform';
+  const columns = COLUMNS_BY_TYPE[type] ?? COLUMNS_BY_TYPE.freeform;
+  // Sensible per-type defaults; an explicit settings payload overrides them.
+  const defaultSettings: BoardSettings =
+    type === 'todo' ? { showOverdue: true } : type === 'calendar' ? { showOverdue: false } : {};
+  const settings: BoardSettings = { ...defaultSettings, ...(data.settings ?? {}) };
 
   return prisma.board.create({
     data: {
       name: data.name || 'Untitled board',
+      type,
       labels: labels as unknown as Prisma.InputJsonValue,
+      settings: settings as unknown as Prisma.InputJsonValue,
       columns: {
-        create: DEFAULT_COLUMNS.map((name, i) => ({ name, sortOrder: i })),
+        create: columns.map((name, i) => ({ name, sortOrder: i })),
       },
     },
     include: {
@@ -78,14 +106,23 @@ export async function updateBoard(
   data: {
     name?: string;
     icon?: string;
+    type?: BoardType;
     isFavorite?: boolean;
     sortOrder?: number;
     labels?: Label[];
+    settings?: BoardSettings;
   }
 ) {
-  const updateData: Prisma.BoardUpdateInput = { ...data } as Prisma.BoardUpdateInput;
-  if (data.labels !== undefined) {
-    updateData.labels = data.labels as unknown as Prisma.InputJsonValue;
+  const { settings, labels, ...rest } = data;
+  const updateData: Prisma.BoardUpdateInput = { ...rest } as Prisma.BoardUpdateInput;
+  if (labels !== undefined) {
+    updateData.labels = labels as unknown as Prisma.InputJsonValue;
+  }
+  // Merge settings so a partial PATCH (e.g. just showOverdue) never clobbers year.
+  if (settings !== undefined) {
+    const existing = await prisma.board.findUnique({ where: { id }, select: { settings: true } });
+    const merged = { ...((existing?.settings as BoardSettings) ?? {}), ...settings };
+    updateData.settings = merged as unknown as Prisma.InputJsonValue;
   }
   return prisma.board.update({ where: { id }, data: updateData });
 }

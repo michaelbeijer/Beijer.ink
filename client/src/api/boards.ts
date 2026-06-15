@@ -1,5 +1,5 @@
 import api from './client';
-import type { Board, BoardSummary, Column, Card, Label, ChecklistItem } from '../types/board';
+import type { Board, BoardSummary, BoardType, BoardSettings, Column, Card, Label, ChecklistItem } from '../types/board';
 
 // ── Boards ──
 
@@ -13,14 +13,24 @@ export async function getBoard(id: string): Promise<Board> {
   return data;
 }
 
-export async function createBoard(body: { name?: string } = {}): Promise<Board> {
+export async function createBoard(
+  body: { name?: string; type?: BoardType; settings?: BoardSettings } = {}
+): Promise<Board> {
   const { data } = await api.post<Board>('/boards', body);
   return data;
 }
 
 export async function updateBoard(
   id: string,
-  body: Partial<{ name: string; icon: string; isFavorite: boolean; sortOrder: number; labels: Label[] }>
+  body: Partial<{
+    name: string;
+    icon: string;
+    type: BoardType;
+    isFavorite: boolean;
+    sortOrder: number;
+    labels: Label[];
+    settings: BoardSettings;
+  }>
 ): Promise<BoardSummary> {
   const { data } = await api.patch<BoardSummary>(`/boards/${id}`, body);
   return data;

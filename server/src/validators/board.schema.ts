@@ -12,16 +12,27 @@ const checklistItemSchema = z.object({
   done: z.boolean(),
 });
 
+const boardTypeSchema = z.enum(['calendar', 'todo', 'freeform']);
+
+const boardSettingsSchema = z.object({
+  year: z.number().int().nullable().optional(),
+  showOverdue: z.boolean().optional(),
+});
+
 export const createBoardSchema = z.object({
   name: z.string().min(1).optional(),
+  type: boardTypeSchema.optional(),
+  settings: boardSettingsSchema.optional(),
 });
 
 export const updateBoardSchema = z.object({
   name: z.string().min(1).optional(),
   icon: z.string().optional(),
+  type: boardTypeSchema.optional(),
   isFavorite: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
   labels: z.array(labelSchema).optional(),
+  settings: boardSettingsSchema.optional(),
 });
 
 export const createColumnSchema = z.object({

@@ -7,9 +7,24 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.22.2**
+Current Version: **0.23.0**
 
 ---
+
+## [0.23.0] — 2026-06-15
+
+### Added
+- **Board types, stored on the server.** Every board is now a **Calendar**, **To-do**, or **Free-form** board. The type lives on the board itself (not in your browser), so a board behaves identically on every device — desktop and mobile no longer disagree about what a board is. Pick a type from the new selector in the board header, and create boards by type from the sidebar's **New board** menu.
+  - **Calendar** — 52 weeks, week-grouped, a single "Items" list, overdue rollup off.
+  - **To-do** — To do / Doing / Done, list-grouped, overdue rollup on.
+  - **Free-form** — plain lists for anything (clients, terminology, …).
+
+### Fixed
+- **Mobile no longer shows phantom "overdue" items on calendar boards.** The year and overdue settings used to be per-device (localStorage), so a calendar board set up on desktop still looked like a to-do board on mobile and surfaced its back-dated log as overdue. These settings are now server-side. Existing calendar boards heal automatically the next time they're opened on the device where they were created.
+
+### Database
+- Adds `boards.type` and `boards.settings` columns (migration `20260615000000_board_types`). Run `npx prisma migrate deploy` on production.
+
 
 ## [0.22.2] — 2026-06-15
 
