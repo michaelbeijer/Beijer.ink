@@ -7,9 +7,21 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.20.0**
+Current Version: **0.21.0**
 
 ---
+
+## [0.21.0] — 2026-06-15
+
+### Added
+- **Multiple views for boards (Calendar / Kanban / Table / List)** — a board's cards can now be shown in four ways via a view switcher in the board header. Every view is a projection of the same cards: switching view never changes the data or relationships.
+  - **Calendar** — month grid with cards on their date; drag a card to another day to reschedule it; hover a day and click **+** to add a card there.
+  - **Kanban — Group by Week** — auto columns (No date · Week N · … · Done) derived from each card's date. Dragging a card to another week sets its date, to **Done** marks it done, to **No date** clears the date.
+  - **Kanban — Group by List** — the original free-form columns (unchanged; the default).
+  - **Table** — editable rows (title, date, done, labels, checklist, list).
+  - **List** — agenda grouped by Overdue / Today / This week / Later / No date.
+  - **Two-way sync**: a move in any view (e.g. dragging in the Calendar) is reflected in all the others, because every view reads and writes the same card date/done fields. The selected view and Kanban grouping are remembered per board.
+
 
 ## [0.20.0] — 2026-06-14
 
