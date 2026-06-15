@@ -1,179 +1,110 @@
 # Beijer.ink
 
-A personal note-taking web app with a WYSIWYG rich text editor, full-text search, and a clean responsive UI. Built as a single-user app, accessible as a PWA on mobile.
+A personal, self-hosted **notes + planning** web app. Rich-text notes live in nested notebooks with full-text search, and the same workspace doubles as a planner: Trello-style **boards** whose cards can be viewed as a **Kanban**, **Calendar**, **Table**, or **List** — different lenses on one set of data. Built for a single user, installable as a PWA, and comfortable on desktop and phone.
 
-<img width="1509" height="1206" alt="image" src="https://github.com/user-attachments/assets/3136f331-db0a-4742-ab1b-78b425995bd8" />
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 19, Vite, Tiptap (ProseMirror), Tailwind CSS 4, React Query |
-| Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL (Prisma ORM) |
-| Search | PostgreSQL full-text search (tsvector + GIN index) |
-| Auth | Single password with bcrypt + JWT |
-| Deployment | Docker on Railway |
+<img width="1509" alt="Beijer.ink" src="https://github.com/user-attachments/assets/3136f331-db0a-4742-ab1b-78b425995bd8" />
 
 ## Features
 
-- **WYSIWYG rich text editor** — Tiptap-based editor where bold text looks bold, headings look like headings, tables are visual grids, and task lists have checkboxes — no Markdown syntax required
-- **Block-level editing** — Large documents (50KB+) render as fast static HTML; clicking any block activates just that block in a live editor, preventing browser freezes on very large notes
-- **Formatting toolbar** — Toggleable toolbar for bold, italic, underline, strikethrough, headings, code, links, lists, blockquotes, tables, and horizontal rules; buttons highlight to show active formats; available in both the note editor and scratchpad
-- **Table of contents** — Auto-generated panel listing all headings with click-to-jump navigation; toggle via the tree icon in the action bar
-- **Table editing** — Right-click inside a table for a context menu to add/delete rows and columns, toggle header rows, merge/split cells, or delete the table
-- **Fullscreen mode** — Expand the editor to fill the entire page; exit with Escape
-- **Global search** — Weighted PostgreSQL FTS across all notes (title boosted over content), with highlighted result snippets
-- **Notebooks** — Organize notes in a hierarchical tree with right-click context menu for moving, renaming, and creating sub-notebooks
-- **Favourites** — Pin folders or notes to a dedicated section at the top of the sidebar for quick access
-- **Drag-and-drop** — Move notes and folders in and out of other folders directly in the sidebar tree
-- **Root notes** — Create notes outside of any notebook; they appear in the sidebar below the notebook tree and open directly in the editor
-- **Scratchpad** — Instant-access editor on app load for quick jotting; auto-saved and always available
-- **Auto-save** — 1-second debounce, saves in the background
-- **Responsive layout** — 3-column desktop, 2-column tablet, single-column mobile with bottom navigation
-- **5 themes** — Light, Dark, Rose, Lavender, and Mint; preference saved across sessions
-- **PWA** — Installable on Android via "Add to Home Screen"
+### Notes
+- **WYSIWYG editor** (Tiptap/ProseMirror) — bold looks bold, headings look like headings, tables are real grids, task lists have checkboxes. No Markdown syntax to remember.
+- **Block-level editing** — large documents render as fast static HTML; clicking a block activates just that block in a live editor, so 50 KB+ notes never freeze the browser.
+- **Formatting toolbar**, **auto-generated table of contents**, **table editing** (right-click for rows/columns/merge), and a distraction-free **fullscreen** mode.
+- **Auto-save** with a 1-second debounce.
 
-## Project Structure
+### Organising
+- **Notebooks** — a hierarchical tree; right-click to move, rename, or create sub-notebooks.
+- **Root notes** — notes that live outside any notebook.
+- **Favourites** — pin notebooks, notes, or boards to the top of the sidebar.
+- **Drag-and-drop** — move notes and notebooks around the tree directly.
+- **Scratchpad** — an always-available editor for quick jotting, open on load.
 
-```
-beijer.ink/
-├── client/               # React + Vite frontend
-│   ├── src/
-│   │   ├── api/          # Axios API wrappers
-│   │   ├── components/   # UI components (layout, editor, notes, search, auth)
-│   │   ├── editor/       # Tiptap extensions (search highlighting)
-│   │   ├── hooks/        # React hooks (useAuth, useAutoSave, useTiptap, useSearch)
-│   │   └── types/        # TypeScript type definitions
-│   └── public/           # PWA manifest, icons, service worker
-├── server/               # Express API backend
-│   ├── src/
-│   │   ├── routes/       # Express route definitions
-│   │   ├── controllers/  # Request handlers
-│   │   ├── services/     # Business logic + database queries
-│   │   ├── middleware/    # Auth, validation, error handling
-│   │   ├── validators/   # Zod schemas
-│   │   └── lib/          # Prisma client, R2 client, utilities
-│   └── prisma/           # Schema + migrations
-├── scripts/              # Seed password, Google Drive auth setup
-└── Dockerfile            # Multi-stage production build
-```
+### Boards & views
+- **Boards** are a top-level item alongside notebooks: lists (columns) of cards with **drag-and-drop** reordering of both cards and lists.
+- **Cards** carry a title, rich description, **labels**, a **date**, a **done** state, and a **checklist** — and can **link to a note** (create one from a card, or attach an existing note and open it in the editor).
+- **Four views over the same cards** (switching view never changes the data):
+  - **Kanban** — group by your free-form **lists**, or by **week** (auto columns derived from each card's date, plus "No date" and "Done").
+  - **Calendar** — **Monthly** grid, or **Weekly**; on phones the weekly view becomes an at-a-glance density strip + day-card grid with a mini-month.
+  - **Table** — an editable spreadsheet of every card.
+  - **List** — an agenda grouped by Overdue / Today / This week / Later / No date.
+- **Two-way sync** — dragging a card to another day in the Calendar moves it to the matching week column in the Kanban, and vice versa, because every view reads and writes the same fields.
 
-## Getting Started
+### Everything else
+- **Global search** — weighted PostgreSQL full-text search (title boosted over body) with highlighted snippets; the scratchpad is searchable too. `Ctrl/Cmd-K` to open.
+- **Images** — paste/upload images, stored in Cloudflare R2.
+- **5 themes** — Light, Dark, Rose, Lavender, Mint; remembered across sessions.
+- **PWA** — installable on Android via "Add to Home Screen".
+- **Backups** — a daily SFTP backup (a ZIP of all notes as Markdown, preserving notebook folders) plus an on-demand backup download from Settings.
+- **Responsive** — 3-column desktop, 2-column tablet, single-column mobile with bottom navigation.
 
-### Prerequisites
+## Tech stack
 
-- Node.js 22+
-- PostgreSQL database (local or hosted)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite, TypeScript, Tiptap, Tailwind CSS 4, TanStack Query, dnd-kit |
+| Backend | Node.js, Express, TypeScript |
+| Database | PostgreSQL via Prisma; full-text search (tsvector + GIN) |
+| Storage | Cloudflare R2 (images) |
+| Auth | Single password (bcrypt) + JWT |
+| Deployment | Docker on Railway |
 
-### Setup
+## Getting started
 
-1. Clone the repo and install dependencies:
-   ```bash
-   git clone https://github.com/michaelbeijer/beijer.ink.git
-   cd beijer.ink
-   npm install
-   ```
+**Prerequisites:** Node.js 22+ and a PostgreSQL database (local or hosted).
 
-2. Create a `.env` file from the example:
-   ```bash
-   cp .env.example .env
-   ```
-   Fill in your `DATABASE_URL`, `JWT_SECRET` (64-char hex string), and `ADMIN_PASSWORD`.
-
-3. Copy `.env` to the server directory (Prisma requires it there):
-   ```bash
-   cp .env server/.env
-   ```
-
-4. Run database migrations:
-   ```bash
-   npm run db:migrate
-   ```
-
-5. Seed the admin password:
-   ```bash
-   npm run seed
-   ```
-
-6. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   The client runs on `http://localhost:5173` and the API on `http://localhost:3000`.
-
-### Production Build
-
-Build and start in production mode:
 ```bash
-npm run build
-npm start
+git clone https://github.com/michaelbeijer/beijer.ink.git
+cd beijer.ink
+npm install
+
+cp .env.example .env          # fill in DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD
+cp .env server/.env           # Prisma reads it from here
+
+npm run db:migrate            # apply the schema
+npm run seed                  # set the admin password from ADMIN_PASSWORD
+npm run dev                   # client → http://localhost:5173, API → :3000
 ```
 
-Or use Docker:
+Open **http://localhost:5173** (the client proxies `/api` to the server).
+
+### Production
+
 ```bash
+npm run build && npm start
+# or
 docker build -f server/Dockerfile -t beijer-ink .
 docker run -p 3000:3000 --env-file .env beijer-ink
 ```
 
-## API Endpoints
+### Environment
 
-All endpoints under `/api`, JWT-protected except login.
+`DATABASE_URL`, `JWT_SECRET` (64-char hex), `ADMIN_PASSWORD`, optional `R2_*` (image uploads), and optional `BACKUP_*` (daily SFTP backups — see `.env.example`).
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/auth/login` | Authenticate with password |
-| `GET` | `/api/auth/verify` | Verify JWT token |
-| `GET` | `/api/notebooks` | List all notebooks |
-| `POST` | `/api/notebooks` | Create notebook |
-| `PATCH` | `/api/notebooks/:id` | Update notebook |
-| `DELETE` | `/api/notebooks/:id` | Delete notebook |
-| `GET` | `/api/notes/root` | List root-level notes (no notebook) |
-| `GET` | `/api/notes/notebook/:notebookId` | List notes in notebook |
-| `GET` | `/api/notes/:id` | Get single note |
-| `POST` | `/api/notes` | Create note |
-| `PATCH` | `/api/notes/:id` | Update note (auto-save) |
-| `DELETE` | `/api/notes/:id` | Delete note |
-| `PATCH` | `/api/notes/:id/move` | Move note to another notebook |
-| `GET` | `/api/scratchpad` | Get scratchpad content |
-| `PUT` | `/api/scratchpad` | Update scratchpad content |
-| `GET` | `/api/search?q=...` | Full-text search with highlighted snippets |
-| `GET` | `/api/backup/download` | Download all notes as a zip of markdown files |
-| `POST` | `/api/backup/google-drive/run` | Upload backup to Google Drive |
+## Project structure
+
+```
+beijer.ink/
+├── client/                # React + Vite frontend
+│   └── src/
+│       ├── api/           # Axios API wrappers
+│       ├── components/    # board/, editor/, layout/, notes/, scratchpad/, search/, settings/
+│       ├── hooks/         # data, drag-and-drop, view prefs, media queries
+│       ├── utils/         # tree + calendar helpers
+│       └── types/
+├── server/                # Express API
+│   └── src/
+│       ├── routes/ controllers/ services/ middleware/ validators/
+│       └── prisma/        # schema + migrations
+└── Dockerfile
+```
 
 ## Deployment (Railway)
 
-1. Create a new Railway project with a PostgreSQL add-on
-2. Add a web service pointing to this repo
-3. Set environment variables: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_PASSWORD`, `NODE_ENV=production`
-4. Railway will build using the Dockerfile and run migrations on startup
-5. Configure your custom domain in Railway settings
-
-## Daily Google Drive Backups
-
-Automatic daily backups upload a ZIP of all notes (as markdown files preserving notebook folder structure) to your Google Drive. You can also trigger an upload manually from Settings with "Run Google Drive Backup Now".
-
-### Setup
-
-1. Create an OAuth client (Desktop app) in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) with the Drive API enabled
-2. Run the one-time auth script to get a refresh token:
-   ```bash
-   npx tsx scripts/google-drive-auth.ts
-   ```
-3. Set these environment variables on Railway:
-   - `BACKUP_ENABLED=true`
-   - `BACKUP_CRON=0 2 * * *` (default: 2 AM daily)
-   - `BACKUP_TIMEZONE=Europe/London`
-   - `GOOGLE_DRIVE_CLIENT_ID=...`
-   - `GOOGLE_DRIVE_CLIENT_SECRET=...`
-   - `GOOGLE_DRIVE_REFRESH_TOKEN=...`
-   - `GOOGLE_DRIVE_FOLDER_ID=...` (optional — omit to upload to Drive root)
+1. Create a Railway project with a PostgreSQL add-on.
+2. Add a web service pointing at this repo (it builds via the Dockerfile).
+3. Set `DATABASE_URL`, `JWT_SECRET`, `ADMIN_PASSWORD`, `NODE_ENV=production` (plus `R2_*` / `BACKUP_*` if used).
+4. Add your custom domain in Railway settings.
 
 ## License
 
-This project is for personal use. All rights reserved.
-
-
-
-
-
+Personal project — all rights reserved.
