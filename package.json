@@ -1,6 +1,6 @@
 {
   "name": "beijer-ink",
-  "version": "0.21.1",
+  "version": "0.21.2",
   "private": true,
   "workspaces": [
     "client",

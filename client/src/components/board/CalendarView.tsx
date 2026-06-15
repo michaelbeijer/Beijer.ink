@@ -17,6 +17,7 @@ import type { Board, Card, Label } from '../../types/board';
 import { LABEL_COLORS } from '../../types/board';
 import type { CalendarMode } from '../../hooks/useBoardViewPrefs';
 import { useBoardCardMutations } from '../../hooks/useBoardCardMutations';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   monthGrid,
   monthLabel,
@@ -25,6 +26,7 @@ import {
   startOfWeek,
   weekLabel,
   weekRangeLabel,
+  isoWeek,
   parseDue,
   sameDay,
   startOfDay,
@@ -199,6 +201,228 @@ function DayColumn({
   );
 }
 
+function firstLabelHex(card: Card, labels: Label[]): string {
+  const l = card.labelIds.map((id) => labels.find((x) => x.id === id)).find((x): x is Label => Boolean(x));
+  return l ? LABEL_COLORS[l.color] ?? l.color : 'var(--color-accent)';
+}
+
+const MOBILE_WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+/** Compact "how busy is each day" strip — a left-to-right week scrubber. */
+function DensityStrip({
+  weekDays,
+  cardsForDay,
+  labels,
+  today,
+}: {
+  weekDays: Date[];
+  cardsForDay: (d: Date) => Card[];
+  labels: Label[];
+  today: Date;
+}) {
+  return (
+    <div className="flex gap-1 mb-3">
+      {weekDays.map((d, i) => {
+        const cs = cardsForDay(d);
+        const isToday = sameDay(d, today);
+        return (
+          <div key={d.toISOString()} className="flex-1 flex flex-col items-center gap-1">
+            <div
+              className={`w-full h-9 rounded-md flex flex-col justify-end gap-0.5 p-1 ${
+                isToday ? 'bg-accent/15 ring-1 ring-accent' : 'bg-muted-bg'
+              }`}
+            >
+              {cs.slice(0, 4).map((c) => (
+                <span key={c.id} className="h-1 rounded-full" style={{ background: firstLabelHex(c, labels) }} />
+              ))}
+            </div>
+            <span className={`text-[10px] ${isToday ? 'text-accent font-semibold' : 'text-ink-muted'}`}>
+              {MOBILE_WEEKDAY_LETTERS[i]}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A single day box in the mobile week grid. */
+function MobileDayBox({
+  date,
+  cards,
+  labels,
+  isToday,
+  overdue,
+  onOpenCard,
+  onAdd,
+}: {
+  date: Date;
+  cards: Card[];
+  labels: Label[];
+  isToday: boolean;
+  overdue: Card[];
+  onOpenCard: (id: string) => void;
+  onAdd: (title: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: dayToISO(date), data: { date } });
+  const [adding, setAdding] = useState(false);
+  const [showOverdue, setShowOverdue] = useState(false);
+  const isSunday = date.getDay() === 0;
+  const isWeekend = isSunday || date.getDay() === 6;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border p-2 ${
+        isToday
+          ? 'border-accent bg-accent/5 ring-1 ring-accent/40'
+          : isWeekend
+          ? 'border-edge bg-panel/60'
+          : 'border-edge bg-surface'
+      } ${isOver ? 'bg-accent/10' : ''}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className={`text-sm font-medium ${isSunday ? 'text-danger' : 'text-ink'}`}>
+          {date.toLocaleDateString(undefined, { weekday: 'short' })} {date.getDate()}
+        </span>
+        <div className="flex items-center gap-1">
+          {isToday && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent text-white">today</span>
+          )}
+          <button onClick={() => setAdding(true)} className="text-ink-faint hover:text-ink" title="Add card">
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {isToday && overdue.length > 0 && (
+        <button
+          onClick={() => setShowOverdue((s) => !s)}
+          className="w-full text-left px-2 py-0.5 mb-1 rounded bg-danger/15 text-danger text-[11px] font-medium"
+        >
+          {overdue.length}× overdue
+        </button>
+      )}
+
+      <div className="flex flex-col gap-1">
+        {isToday &&
+          showOverdue &&
+          overdue.map((card) => (
+            <CalCard key={`od-${card.id}`} card={card} labels={labels} onClick={() => onOpenCard(card.id)} />
+          ))}
+        {cards.map((card) => (
+          <CalCard key={card.id} card={card} labels={labels} onClick={() => onOpenCard(card.id)} />
+        ))}
+        {adding && <InlineAdd onAdd={onAdd} onCancel={() => setAdding(false)} />}
+      </div>
+    </div>
+  );
+}
+
+/** Compact month picker for the 8th grid cell; tap a day jumps to its week. */
+function MiniMonth({
+  anchor,
+  weekDays,
+  onPickDay,
+}: {
+  anchor: Date;
+  weekDays: Date[];
+  onPickDay: (d: Date) => void;
+}) {
+  const cells = monthGrid(anchor);
+  const weekSet = new Set(weekDays.map((d) => d.toDateString()));
+  return (
+    <div className="rounded-xl border border-edge bg-surface p-2">
+      <div className="text-xs font-semibold text-ink mb-1">
+        {anchor.toLocaleDateString(undefined, { month: 'long' })}
+      </div>
+      <div className="grid grid-cols-7 gap-px text-[10px]">
+        {MOBILE_WEEKDAY_LETTERS.map((d, i) => (
+          <div key={i} className="text-center text-ink-faint">
+            {d}
+          </div>
+        ))}
+        {cells.map((c) => {
+          const inWeek = weekSet.has(c.date.toDateString());
+          return (
+            <button
+              key={c.date.toISOString()}
+              onClick={() => onPickDay(c.date)}
+              className={`aspect-square flex items-center justify-center rounded ${
+                c.isToday
+                  ? 'bg-accent text-white font-semibold'
+                  : inWeek
+                  ? 'bg-accent/15 text-ink'
+                  : !c.inMonth
+                  ? 'text-ink-faint'
+                  : c.date.getDay() === 0
+                  ? 'text-danger'
+                  : 'text-ink-muted'
+              }`}
+            >
+              {c.date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** aCalendar-style mobile week: density strip + column-major 2-col day grid + mini-month. */
+function MobileWeek({
+  anchor,
+  weekDays,
+  cardsForDay,
+  overdue,
+  labels,
+  today,
+  onOpenCard,
+  onAddDay,
+  onPickDay,
+}: {
+  anchor: Date;
+  weekDays: Date[];
+  cardsForDay: (d: Date) => Card[];
+  overdue: Card[];
+  labels: Label[];
+  today: Date;
+  onOpenCard: (id: string) => void;
+  onAddDay: (date: Date, title: string) => void;
+  onPickDay: (d: Date) => void;
+}) {
+  const dayBox = (date: Date) => (
+    <MobileDayBox
+      key={date.toISOString()}
+      date={date}
+      cards={cardsForDay(date)}
+      labels={labels}
+      isToday={sameDay(date, today)}
+      overdue={overdue}
+      onOpenCard={onOpenCard}
+      onAdd={(t) => onAddDay(date, t)}
+    />
+  );
+
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="text-[11px] text-ink-muted mb-2">
+        wk {isoWeek(anchor)} · {weekDays[0].getDate()}–{weekDays[6].getDate()}
+      </div>
+      <DensityStrip weekDays={weekDays} cardsForDay={cardsForDay} labels={labels} today={today} />
+      <div className="flex gap-2 items-start pb-4">
+        {/* Left column: Mon–Thu */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2">{weekDays.slice(0, 4).map(dayBox)}</div>
+        {/* Right column: Fri–Sun + mini-month */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          {weekDays.slice(4, 7).map(dayBox)}
+          <MiniMonth anchor={anchor} weekDays={weekDays} onPickDay={onPickDay} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CalendarView({ board, onOpenCard, mode, onModeChange }: CalendarViewProps) {
   const { setCardDate, addCard } = useBoardCardMutations(board.id);
   const [anchor, setAnchor] = useState(() => new Date());
@@ -211,6 +435,7 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
 
   const allCards = useMemo(() => board.columns.flatMap((c) => c.cards), [board.columns]);
   const defaultColumnId = board.columns[0]?.id;
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const monthCells = useMemo(() => monthGrid(anchor), [anchor]);
   const weekDays = useMemo(() => {
@@ -239,6 +464,13 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
   }
 
   const today = startOfDay(new Date());
+  // Overdue = not-done cards whose date is before today (rolled onto today in the mobile week).
+  const overdue = allCards
+    .filter((c) => {
+      const d = parseDue(c.dueDate);
+      return d && !c.dueDone && d.getTime() < today.getTime();
+    })
+    .sort((a, b) => parseDue(a.dueDate)!.getTime() - parseDue(b.dueDate)!.getTime());
   const activeCard = allCards.find((c) => c.id === activeCardId);
   const label = mode === 'month' ? monthLabel(anchor) : `${weekLabel(anchor)} · ${weekRangeLabel(anchor)}`;
 
@@ -309,6 +541,18 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
               ))}
             </div>
           </>
+        ) : isMobile ? (
+          <MobileWeek
+            anchor={anchor}
+            weekDays={weekDays}
+            cardsForDay={cardsForDay}
+            overdue={overdue}
+            labels={board.labels}
+            today={today}
+            onOpenCard={onOpenCard}
+            onAddDay={(date, t) => defaultColumnId && addCard(defaultColumnId, t, dayToISO(date))}
+            onPickDay={(d) => setAnchor(d)}
+          />
         ) : (
           <div className="flex flex-1 min-h-0 border-t border-l border-edge">
             {weekDays.map((date) => (

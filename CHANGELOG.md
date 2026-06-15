@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.21.1**
+Current Version: **0.21.2**
 
 ---
+
+## [0.21.2] — 2026-06-15
+
+### Added
+- **Mobile weekly calendar (aCalendar-style).** On phones, the board Calendar's Weekly mode switches to an at-a-glance layout instead of the 7 narrow columns: a **density strip** (Mon–Sun, showing how busy each day is), then a **column-major 2-column grid** — Mon→Thu down the left, Fri→Sun plus a **mini-month** down the right. Today is highlighted, Sundays are red, weekends tinted, and today carries an **"N× overdue"** rollup (tap to reveal past-due cards and drag them onto a day to reschedule). Drag-to-reschedule, tap-to-open and add-on-day all work; the desktop weekly view (7 columns) is unchanged.
+
 
 ## [0.21.1] — 2026-06-15
 
