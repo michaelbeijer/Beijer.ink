@@ -45,6 +45,16 @@ export function useBoardViewPrefs(boardId: string) {
     const n = parseInt(raw, 10);
     return Number.isFinite(n) && n > 0 ? n : null;
   });
+  // Overdue rollup on the mobile week view — per board. Defaults OFF for year
+  // boards (they're logs of past weeks) and ON otherwise (to-do-style boards).
+  const overdueKey = `bink:board:${boardId}:showOverdue`;
+  const [showOverdue, setShowOverdueState] = useState<boolean>(() => {
+    const raw = read(overdueKey, '');
+    if (raw === '1') return true;
+    if (raw === '0') return false;
+    const yr = parseInt(read(yearKey, ''), 10);
+    return !(Number.isFinite(yr) && yr > 0);
+  });
 
   const setView = useCallback(
     (v: BoardViewType) => {
@@ -78,5 +88,19 @@ export function useBoardViewPrefs(boardId: string) {
     [yearKey]
   );
 
-  return { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode, year, setYear };
+  const setShowOverdue = useCallback(
+    (v: boolean) => {
+      setShowOverdueState(v);
+      write(overdueKey, v ? '1' : '0');
+    },
+    [overdueKey]
+  );
+
+  return {
+    view, setView,
+    groupBy, setGroupBy,
+    calendarMode, setCalendarMode,
+    year, setYear,
+    showOverdue, setShowOverdue,
+  };
 }

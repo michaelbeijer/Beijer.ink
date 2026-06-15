@@ -9,6 +9,8 @@ interface YearImportDialogProps {
   board: Board;
   year: number | null;
   onSetYear: (y: number | null) => void;
+  showOverdue: boolean;
+  onSetShowOverdue: (v: boolean) => void;
   onClose: () => void;
 }
 
@@ -97,7 +99,7 @@ function parseWeeks(text: string): ParsedWeek[] {
   return weeks;
 }
 
-export function YearImportDialog({ board, year, onSetYear, onClose }: YearImportDialogProps) {
+export function YearImportDialog({ board, year, onSetYear, showOverdue, onSetShowOverdue, onClose }: YearImportDialogProps) {
   const queryClient = useQueryClient();
   const [yearInput, setYearInput] = useState<number>(year ?? new Date().getFullYear());
   const [text, setText] = useState('');
@@ -206,6 +208,17 @@ export function YearImportDialog({ board, year, onSetYear, onClose }: YearImport
           <p className="text-xs text-ink-muted">
             A year board shows all {isoLabel(yearInput)} weeks as columns in Kanban → Group by: Week, ready to fill.
           </p>
+
+          {/* Per-board display option */}
+          <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showOverdue}
+              onChange={(e) => onSetShowOverdue(e.target.checked)}
+            />
+            Show the "overdue" rollup on the mobile week view
+            <span className="text-xs text-ink-muted">(off by default for year boards — they're logs, not to-dos)</span>
+          </label>
 
           {/* Paste */}
           <div>

@@ -40,6 +40,8 @@ interface CalendarViewProps {
   onOpenCard: (cardId: string) => void;
   mode: CalendarMode;
   onModeChange: (m: CalendarMode) => void;
+  /** Per-board: show the "N× overdue" rollup on the mobile week view. */
+  showOverdue: boolean;
 }
 
 function CalCard({ card, labels, onClick }: { card: Card; labels: Label[]; onClick: () => void }) {
@@ -428,7 +430,7 @@ function MobileWeek({
   );
 }
 
-export function CalendarView({ board, onOpenCard, mode, onModeChange }: CalendarViewProps) {
+export function CalendarView({ board, onOpenCard, mode, onModeChange, showOverdue }: CalendarViewProps) {
   const { setCardDate, addCard } = useBoardCardMutations(board.id);
   const [anchor, setAnchor] = useState(() => new Date());
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
@@ -470,13 +472,20 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
   }
 
   const today = startOfDay(new Date());
-  // Overdue = not-done cards whose date is before today (rolled onto today in the mobile week).
-  const overdue = allCards
-    .filter((c) => {
-      const d = parseDue(c.dueDate);
-      return d && !c.dueDone && d.getTime() < today.getTime();
-    })
-    .sort((a, b) => parseDue(a.dueDate)!.getTime() - parseDue(b.dueDate)!.getTime());
+  // Overdue = not-done cards due in the recent past (rolled onto today in the
+  // mobile week). Per-board opt-in, and capped to the last ~3 weeks so a board
+  // full of back-dated log entries doesn't surface as hundreds of "overdue".
+  const OVERDUE_WINDOW_MS = 21 * 24 * 60 * 60 * 1000;
+  const overdue = showOverdue
+    ? allCards
+        .filter((c) => {
+          const d = parseDue(c.dueDate);
+          if (!d || c.dueDone) return false;
+          const behind = today.getTime() - d.getTime();
+          return behind > 0 && behind <= OVERDUE_WINDOW_MS;
+        })
+        .sort((a, b) => parseDue(a.dueDate)!.getTime() - parseDue(b.dueDate)!.getTime())
+    : [];
   const activeCard = allCards.find((c) => c.id === activeCardId);
   const label = mode === 'month' ? monthLabel(anchor) : `${weekLabel(anchor)} · ${weekRangeLabel(anchor)}`;
 

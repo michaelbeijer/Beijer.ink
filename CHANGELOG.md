@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.22.0**
+Current Version: **0.22.1**
 
 ---
+
+## [0.22.1] — 2026-06-15
+
+### Changed
+- **The mobile "overdue" rollup is now per-board and quieter.** It's a per-board setting (toggle in the board's **Year / import** dialog), **off by default for year boards** (they're a log of past weeks, not a to-do list) and on for normal boards. When on, it now only counts cards due within the **last 3 weeks**, so a board full of back-dated entries no longer shows hundreds of "overdue" items. Fixes year boards reading a whole imported year as overdue.
+
 
 ## [0.22.0] — 2026-06-15
 

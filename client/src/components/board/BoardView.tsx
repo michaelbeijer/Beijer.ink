@@ -24,7 +24,7 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
   const [boardName, setBoardName] = useState('');
   const [showImport, setShowImport] = useState(false);
 
-  const { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode, year, setYear } =
+  const { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode, year, setYear, showOverdue, setShowOverdue } =
     useBoardViewPrefs(boardId);
 
   const { data: board } = useQuery({
@@ -140,6 +140,7 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
           onOpenCard={setOpenCardId}
           mode={calendarMode}
           onModeChange={setCalendarMode}
+          showOverdue={showOverdue}
         />
       )}
       {view === 'table' && <TableView board={board} onOpenCard={setOpenCardId} />}
@@ -162,6 +163,8 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
           board={board}
           year={year}
           onSetYear={setYear}
+          showOverdue={showOverdue}
+          onSetShowOverdue={setShowOverdue}
           onClose={() => setShowImport(false)}
         />
       )}
