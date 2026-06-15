@@ -22,7 +22,8 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [boardName, setBoardName] = useState('');
 
-  const { view, setView, groupBy, setGroupBy } = useBoardViewPrefs(boardId);
+  const { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode } =
+    useBoardViewPrefs(boardId);
 
   const { data: board } = useQuery({
     queryKey: ['board', boardId],
@@ -118,7 +119,14 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
         ) : (
           <KanbanView board={board} onOpenCard={setOpenCardId} />
         ))}
-      {view === 'calendar' && <CalendarView board={board} onOpenCard={setOpenCardId} />}
+      {view === 'calendar' && (
+        <CalendarView
+          board={board}
+          onOpenCard={setOpenCardId}
+          mode={calendarMode}
+          onModeChange={setCalendarMode}
+        />
+      )}
       {view === 'table' && <TableView board={board} onOpenCard={setOpenCardId} />}
       {view === 'list' && <ListView board={board} onOpenCard={setOpenCardId} />}
 

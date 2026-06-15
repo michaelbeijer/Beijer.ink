@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.21.0**
+Current Version: **0.21.1**
 
 ---
+
+## [0.21.1] — 2026-06-15
+
+### Added
+- **Calendar view now has a Monthly / Weekly toggle.** Monthly is the existing month grid; **Weekly** lays the seven days out horizontally as columns (Mon | Tue | … | Sun), each a tall day column you can drop cards into and add cards to. Previous/next steps by week in Weekly mode, and the chosen mode is remembered per board. Drag-to-reschedule, add-on-day and click-to-open work the same in both modes.
+
 
 ## [0.21.0] — 2026-06-15
 

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 
 export type BoardViewType = 'kanban' | 'calendar' | 'table' | 'list';
 export type KanbanGroupBy = 'list' | 'week';
+export type CalendarMode = 'month' | 'week';
 
 function read(key: string, fallback: string): string {
   try {
@@ -26,12 +27,16 @@ function write(key: string, value: string): void {
 export function useBoardViewPrefs(boardId: string) {
   const viewKey = `bink:board:${boardId}:view`;
   const groupKey = `bink:board:${boardId}:groupBy`;
+  const calKey = `bink:board:${boardId}:calendarMode`;
 
   const [view, setViewState] = useState<BoardViewType>(
     () => read(viewKey, 'kanban') as BoardViewType
   );
   const [groupBy, setGroupByState] = useState<KanbanGroupBy>(
     () => read(groupKey, 'list') as KanbanGroupBy
+  );
+  const [calendarMode, setCalendarModeState] = useState<CalendarMode>(
+    () => read(calKey, 'month') as CalendarMode
   );
 
   const setView = useCallback(
@@ -50,5 +55,13 @@ export function useBoardViewPrefs(boardId: string) {
     [groupKey]
   );
 
-  return { view, setView, groupBy, setGroupBy };
+  const setCalendarMode = useCallback(
+    (m: CalendarMode) => {
+      setCalendarModeState(m);
+      write(calKey, m);
+    },
+    [calKey]
+  );
+
+  return { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode };
 }
