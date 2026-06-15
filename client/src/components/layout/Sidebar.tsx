@@ -4,7 +4,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
-import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
+import { getBoards, createBoard, deleteBoard, updateBoard, deleteColumn, updateColumn } from '../../api/boards';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemePicker } from './ThemePicker';
 import { flattenNotebookTree } from '../../utils/flattenNotebookTree';
@@ -312,6 +312,11 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
   const createYearBoardMutation = useMutation({
     mutationFn: async (yr: number) => {
       const board = await createBoard({ name: `Calendar ${yr}` });
+      // Year boards group by week (date-driven), so the seeded To do/Doing/Done
+      // lists are noise — collapse to a single neutral home list.
+      const cols = board.columns ?? [];
+      for (let i = 1; i < cols.length; i++) await deleteColumn(cols[i].id);
+      if (cols[0]) await updateColumn(cols[0].id, { name: 'Items' });
       await updateBoard(board.id, {
         labels: [
           { id: crypto.randomUUID(), name: 'Earnings', color: 'green' },

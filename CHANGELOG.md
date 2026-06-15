@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.22.1**
+Current Version: **0.22.2**
 
 ---
+
+## [0.22.2] — 2026-06-15
+
+### Changed
+- **New year boards start with a single "Items" list instead of To do / Doing / Done.** A year board groups by week (from each card's date), so the default lists were just noise. New year boards now collapse to one neutral home list. (Existing year boards: the empty Doing/Done lists can be deleted by hand.)
+
 
 ## [0.22.1] — 2026-06-15
 
