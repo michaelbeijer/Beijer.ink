@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.21.3**
+Current Version: **0.21.4**
 
 ---
+
+## [0.21.4] — 2026-06-15
+
+### Added
+- **Setting to show/hide the week density strip.** Settings → Calendar → "Week density strip" toggles the busy-ness overview row at the top of the mobile weekly calendar. On by default; applies instantly and is remembered.
+
 
 ## [0.21.3] — 2026-06-15
 

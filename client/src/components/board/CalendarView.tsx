@@ -18,6 +18,7 @@ import { LABEL_COLORS } from '../../types/board';
 import type { CalendarMode } from '../../hooks/useBoardViewPrefs';
 import { useBoardCardMutations } from '../../hooks/useBoardCardMutations';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useBoolSetting, SETTING_CALENDAR_DENSITY_STRIP } from '../../hooks/useAppSettings';
 import {
   monthGrid,
   monthLabel,
@@ -377,6 +378,7 @@ function MobileWeek({
   overdue,
   labels,
   today,
+  showStrip,
   onOpenCard,
   onAddDay,
   onPickDay,
@@ -387,6 +389,7 @@ function MobileWeek({
   overdue: Card[];
   labels: Label[];
   today: Date;
+  showStrip: boolean;
   onOpenCard: (id: string) => void;
   onAddDay: (date: Date, title: string) => void;
   onPickDay: (d: Date) => void;
@@ -409,9 +412,11 @@ function MobileWeek({
       <div className="text-[11px] text-ink-muted mb-2 shrink-0">
         wk {isoWeek(anchor)} · {weekDays[0].getDate()}–{weekDays[6].getDate()}
       </div>
-      <div className="shrink-0">
-        <DensityStrip weekDays={weekDays} cardsForDay={cardsForDay} labels={labels} today={today} />
-      </div>
+      {showStrip && (
+        <div className="shrink-0">
+          <DensityStrip weekDays={weekDays} cardsForDay={cardsForDay} labels={labels} today={today} />
+        </div>
+      )}
       {/* Fixed week shape: 2 cols × 4 rows, filled column-major
           (Mon–Thu down the left, Fri–Sun + mini-month down the right).
           Every day is an equal-sized box; a busy day scrolls inside its box. */}
@@ -436,6 +441,7 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
   const allCards = useMemo(() => board.columns.flatMap((c) => c.cards), [board.columns]);
   const defaultColumnId = board.columns[0]?.id;
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [showDensityStrip] = useBoolSetting(SETTING_CALENDAR_DENSITY_STRIP, true);
 
   const monthCells = useMemo(() => monthGrid(anchor), [anchor]);
   const weekDays = useMemo(() => {
@@ -549,6 +555,7 @@ export function CalendarView({ board, onOpenCard, mode, onModeChange }: Calendar
             overdue={overdue}
             labels={board.labels}
             today={today}
+            showStrip={showDensityStrip}
             onOpenCard={onOpenCard}
             onAddDay={(date, t) => defaultColumnId && addCard(defaultColumnId, t, dayToISO(date))}
             onPickDay={(d) => setAnchor(d)}
