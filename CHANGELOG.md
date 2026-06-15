@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.21.2**
+Current Version: **0.21.3**
 
 ---
+
+## [0.21.3] — 2026-06-15
+
+### Changed
+- **Mobile weekly calendar now keeps a fixed week shape.** The day boxes are an equal-sized 2×4 grid (filled column-major: Mon→Thu left, Fri→Sun + mini-month right), like aCalendar, instead of growing to fit their content — so the week always looks the same at a glance. A day with more cards than fit now scrolls inside its own box rather than stretching the layout.
+
 
 ## [0.21.2] — 2026-06-15
 

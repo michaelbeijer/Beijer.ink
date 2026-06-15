@@ -273,7 +273,7 @@ function MobileDayBox({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl border p-2 ${
+      className={`flex flex-col min-h-0 overflow-hidden rounded-xl border p-2 ${
         isToday
           ? 'border-accent bg-accent/5 ring-1 ring-accent/40'
           : isWeekend
@@ -281,7 +281,7 @@ function MobileDayBox({
           : 'border-edge bg-surface'
       } ${isOver ? 'bg-accent/10' : ''}`}
     >
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1 shrink-0">
         <span className={`text-sm font-medium ${isSunday ? 'text-danger' : 'text-ink'}`}>
           {date.toLocaleDateString(undefined, { weekday: 'short' })} {date.getDate()}
         </span>
@@ -298,13 +298,13 @@ function MobileDayBox({
       {isToday && overdue.length > 0 && (
         <button
           onClick={() => setShowOverdue((s) => !s)}
-          className="w-full text-left px-2 py-0.5 mb-1 rounded bg-danger/15 text-danger text-[11px] font-medium"
+          className="w-full text-left px-2 py-0.5 mb-1 rounded bg-danger/15 text-danger text-[11px] font-medium shrink-0"
         >
           {overdue.length}× overdue
         </button>
       )}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
         {isToday &&
           showOverdue &&
           overdue.map((card) => (
@@ -332,11 +332,11 @@ function MiniMonth({
   const cells = monthGrid(anchor);
   const weekSet = new Set(weekDays.map((d) => d.toDateString()));
   return (
-    <div className="rounded-xl border border-edge bg-surface p-2">
-      <div className="text-xs font-semibold text-ink mb-1">
+    <div className="flex flex-col min-h-0 overflow-hidden rounded-xl border border-edge bg-surface p-2">
+      <div className="text-xs font-semibold text-ink mb-1 shrink-0">
         {anchor.toLocaleDateString(undefined, { month: 'long' })}
       </div>
-      <div className="grid grid-cols-7 gap-px text-[10px]">
+      <div className="grid grid-cols-7 gap-px text-[10px] flex-1 min-h-0 content-start">
         {MOBILE_WEEKDAY_LETTERS.map((d, i) => (
           <div key={i} className="text-center text-ink-faint">
             {d}
@@ -405,19 +405,19 @@ function MobileWeek({
   );
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="text-[11px] text-ink-muted mb-2">
+    <div className="flex-1 min-h-0 flex flex-col">
+      <div className="text-[11px] text-ink-muted mb-2 shrink-0">
         wk {isoWeek(anchor)} · {weekDays[0].getDate()}–{weekDays[6].getDate()}
       </div>
-      <DensityStrip weekDays={weekDays} cardsForDay={cardsForDay} labels={labels} today={today} />
-      <div className="flex gap-2 items-start pb-4">
-        {/* Left column: Mon–Thu */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">{weekDays.slice(0, 4).map(dayBox)}</div>
-        {/* Right column: Fri–Sun + mini-month */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
-          {weekDays.slice(4, 7).map(dayBox)}
-          <MiniMonth anchor={anchor} weekDays={weekDays} onPickDay={onPickDay} />
-        </div>
+      <div className="shrink-0">
+        <DensityStrip weekDays={weekDays} cardsForDay={cardsForDay} labels={labels} today={today} />
+      </div>
+      {/* Fixed week shape: 2 cols × 4 rows, filled column-major
+          (Mon–Thu down the left, Fri–Sun + mini-month down the right).
+          Every day is an equal-sized box; a busy day scrolls inside its box. */}
+      <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-2 flex-1 min-h-0">
+        {weekDays.map(dayBox)}
+        <MiniMonth anchor={anchor} weekDays={weekDays} onPickDay={onPickDay} />
       </div>
     </div>
   );
