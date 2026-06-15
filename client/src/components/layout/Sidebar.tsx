@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, CheckSquare, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
+import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, CalendarDays, CheckSquare, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
 import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
@@ -26,12 +26,14 @@ interface SidebarProps {
   onSelectRootNote: (noteId: string) => void;
   onSelectBoard?: (id: string) => void;
   onBoardDeleted?: (id: string) => void;
+  onSelectCalendar?: () => void;
+  calendarActive?: boolean;
   autoExpandNotebookId?: string | null;
   onOpenSettings?: () => void;
   onClose?: () => void;
 }
 
-export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, onSelectNotebook, onSelectNote, onSelectRootNote, onSelectBoard, onBoardDeleted, autoExpandNotebookId, onOpenSettings, onClose }: SidebarProps) {
+export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, onSelectNotebook, onSelectNote, onSelectRootNote, onSelectBoard, onBoardDeleted, onSelectCalendar, calendarActive, autoExpandNotebookId, onOpenSettings, onClose }: SidebarProps) {
   const queryClient = useQueryClient();
   const { logout } = useAuth();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -449,6 +451,20 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
           </div>
         </div>
       </div>
+
+      {/* Unified calendar (umbrella over all boards) */}
+      {onSelectCalendar && (
+        <button
+          onClick={() => { onSelectCalendar(); onClose?.(); }}
+          className={`flex items-center gap-2 mx-1.5 mt-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
+            calendarActive ? 'bg-active text-ink' : 'text-ink-muted hover:bg-hover hover:text-ink'
+          }`}
+        >
+          <CalendarDays className="w-4 h-4 text-accent shrink-0" />
+          <span className="flex-1 text-left">Calendar</span>
+          <span className="text-[10px] text-ink-faint">all boards</span>
+        </button>
+      )}
 
       {/* Notebook tree */}
       <div

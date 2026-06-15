@@ -1,10 +1,20 @@
 import api from './client';
-import type { Board, BoardSummary, BoardType, BoardSettings, Column, Card, Label, ChecklistItem } from '../types/board';
+import type { Board, BoardSummary, BoardType, BoardSettings, CalendarCard, Column, Card, Label, ChecklistItem } from '../types/board';
 
 // ── Boards ──
 
 export async function getBoards(): Promise<BoardSummary[]> {
   const { data } = await api.get<BoardSummary[]>('/boards');
+  return data;
+}
+
+/** All dated cards across every board, for the unified calendar (optional range). */
+export async function getCalendarCards(from?: string, to?: string): Promise<CalendarCard[]> {
+  const params = new URLSearchParams();
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const qs = params.toString();
+  const { data } = await api.get<CalendarCard[]>(`/boards/calendar${qs ? `?${qs}` : ''}`);
   return data;
 }
 

@@ -68,6 +68,42 @@ export async function getBoard(id: string) {
   });
 }
 
+/**
+ * Dated cards across ALL boards, for the unified (umbrella) calendar.
+ * Each card is returned with its owning board's id/name/type and label palette
+ * so the calendar can render and colour-code it without a second fetch.
+ */
+export async function getCalendarCards(from?: string, to?: string) {
+  let dueFilter: Prisma.DateTimeNullableFilter = { not: null };
+  if (from || to) {
+    dueFilter = {};
+    if (from) dueFilter.gte = new Date(from);
+    if (to) dueFilter.lte = new Date(to);
+  }
+  const cards = await prisma.card.findMany({
+    where: { dueDate: dueFilter },
+    orderBy: { dueDate: 'asc' },
+    include: {
+      note: { select: { id: true, title: true } },
+      column: {
+        select: {
+          board: { select: { id: true, name: true, type: true, labels: true } },
+        },
+      },
+    },
+  });
+  return cards.map((c) => {
+    const { column, ...card } = c;
+    return {
+      ...card,
+      boardId: column.board.id,
+      boardName: column.board.name,
+      boardType: column.board.type,
+      boardLabels: column.board.labels,
+    };
+  });
+}
+
 export async function createBoard(data: {
   name?: string;
   type?: BoardType;

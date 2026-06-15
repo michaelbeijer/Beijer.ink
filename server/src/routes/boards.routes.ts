@@ -17,6 +17,8 @@ const router = Router();
 
 // Boards
 router.get('/', asyncHandler(boardsController.getAll));
+// NOTE: must precede '/:id' so 'calendar' isn't matched as a board id.
+router.get('/calendar', asyncHandler(boardsController.getCalendar));
 router.get('/:id', asyncHandler(boardsController.getOne));
 router.post('/', validate(createBoardSchema), asyncHandler(boardsController.create));
 router.patch('/:id', validate(updateBoardSchema), asyncHandler(boardsController.update));

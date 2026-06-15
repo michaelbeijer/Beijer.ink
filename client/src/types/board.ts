@@ -73,6 +73,14 @@ export interface Board {
   updatedAt: string;
 }
 
+/** A dated card from the unified calendar — carries its owning board's context. */
+export interface CalendarCard extends Card {
+  boardId: string;
+  boardName: string;
+  boardType: BoardType;
+  boardLabels: Label[];
+}
+
 /** Trello-style label palette used when creating boards / rendering chips. */
 export const LABEL_COLORS: Record<string, string> = {
   green: '#22c55e',

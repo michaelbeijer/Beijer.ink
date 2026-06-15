@@ -8,6 +8,12 @@ export async function getAll(_req: Request, res: Response) {
   res.json(boards);
 }
 
+export async function getCalendar(req: Request, res: Response) {
+  const { from, to } = req.query as { from?: string; to?: string };
+  const cards = await boardsService.getCalendarCards(from, to);
+  res.json(cards);
+}
+
 export async function getOne(req: Request, res: Response) {
   const board = await boardsService.getBoard(req.params.id);
   if (!board) {

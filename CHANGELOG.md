@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.23.0**
+Current Version: **0.24.0**
 
 ---
+
+## [0.24.0] — 2026-06-16
+
+### Added
+- **Unified Calendar — one umbrella calendar across all boards.** A new **Calendar** entry at the top of the sidebar opens an app-level calendar that aggregates the dated cards from *every* board (not tied to a single board). Month and week views, prev/today/next navigation, and each card is **colour-coded by its board**. A row of board chips lets you **show/hide individual boards**. Click any card to open it in place (edits, then the calendar refreshes); opening a card's linked note jumps to it as usual. View mode and hidden-board choices persist locally. (Phase 3 — a read-only Google Calendar / lsp.expert overlay — is still to come.)
+
 
 ## [0.23.0] — 2026-06-15
 

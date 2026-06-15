@@ -9,6 +9,7 @@ import { DragOverlayContent } from './DragOverlayContent';
 import { ResizeDivider } from './ResizeDivider';
 import { NoteEditor } from '../editor/NoteEditor';
 import { BoardView } from '../board/BoardView';
+import { UnifiedCalendarView } from '../board/UnifiedCalendarView';
 import { Scratchpad } from '../scratchpad/Scratchpad';
 import { GlobalSearchDialog } from '../search/GlobalSearchDialog';
 import { SettingsDialog } from '../settings/SettingsDialog';
@@ -24,6 +25,7 @@ export function AppShell() {
   const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editorSearchQuery, setEditorSearchQuery] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export function AppShell() {
   }, []);
 
   const handleSelectNote = useCallback((id: string) => {
+    setShowCalendar(false);
     setSelectedBoardId(null);
     setSelectedNoteId(id);
     setEditorSearchQuery(null);
@@ -62,6 +65,7 @@ export function AppShell() {
   }, []);
 
   const handleSelectRootNote = useCallback((noteId: string) => {
+    setShowCalendar(false);
     setSelectedBoardId(null);
     setSelectedNotebookId(null);
     setSelectedNoteId(noteId);
@@ -70,7 +74,16 @@ export function AppShell() {
   }, []);
 
   const handleSelectBoard = useCallback((id: string) => {
+    setShowCalendar(false);
     setSelectedBoardId(id);
+    setSelectedNoteId(null);
+    setEditorSearchQuery(null);
+    setMobileView('editor');
+  }, []);
+
+  const handleSelectCalendar = useCallback(() => {
+    setShowCalendar(true);
+    setSelectedBoardId(null);
     setSelectedNoteId(null);
     setEditorSearchQuery(null);
     setMobileView('editor');
@@ -82,6 +95,7 @@ export function AppShell() {
 
   // Open a card's linked note in the editor (jump out of the board view).
   const handleOpenLinkedNote = useCallback(async (noteId: string) => {
+    setShowCalendar(false);
     setSelectedBoardId(null);
     const note = await getNoteById(noteId);
     setSelectedNotebookId(note?.notebookId ?? null);
@@ -96,6 +110,7 @@ export function AppShell() {
   }, []);
 
   const handleSearchSelectNote = useCallback(async (noteId: string, query: string) => {
+    setShowCalendar(false);
     // Scratchpad result: deselect note so scratchpad shows, pass search query
     if (noteId === '__scratchpad__') {
       setSelectedBoardId(null);
@@ -163,6 +178,8 @@ export function AppShell() {
                   onSelectRootNote={handleSelectRootNote}
                   onSelectBoard={handleSelectBoard}
                   onBoardDeleted={handleBoardDeleted}
+                  onSelectCalendar={handleSelectCalendar}
+                  calendarActive={showCalendar}
                   autoExpandNotebookId={selectedNotebookId}
                   onOpenSettings={() => setShowSettings(true)}
                 />
@@ -185,7 +202,9 @@ export function AppShell() {
             </div>
 
             <div className="flex-1 min-h-0">
-              {selectedBoardId ? (
+              {showCalendar ? (
+                <UnifiedCalendarView onOpenNote={handleOpenLinkedNote} />
+              ) : selectedBoardId ? (
                 <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
               ) : selectedNoteId ? (
                 <NoteEditor
@@ -259,6 +278,8 @@ export function AppShell() {
                     setSidebarOpen(false);
                   }}
                   onBoardDeleted={handleBoardDeleted}
+                  onSelectCalendar={() => { handleSelectCalendar(); setSidebarOpen(false); }}
+                  calendarActive={showCalendar}
                   onOpenSettings={() => { setShowSettings(true); setSidebarOpen(false); }}
                 />
               </div>
@@ -275,12 +296,16 @@ export function AppShell() {
               onSelectRootNote={handleSelectRootNote}
               onSelectBoard={handleSelectBoard}
               onBoardDeleted={handleBoardDeleted}
+              onSelectCalendar={handleSelectCalendar}
+              calendarActive={showCalendar}
               onOpenSettings={() => setShowSettings(true)}
             />
           )}
 
           {mobileView === 'editor' && (
-            selectedBoardId ? (
+            showCalendar ? (
+              <UnifiedCalendarView onOpenNote={handleOpenLinkedNote} />
+            ) : selectedBoardId ? (
               <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
             ) : selectedNoteId ? (
               <NoteEditor
