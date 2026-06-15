@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -25,11 +25,16 @@ import {
   addDays,
   dayToISO,
   startOfDay,
+  mondayOfIsoWeek,
+  isoWeeksInYear,
+  sameDay,
 } from '../../utils/calendar';
 
 interface KanbanWeekViewProps {
   board: Board;
   onOpenCard: (cardId: string) => void;
+  /** When set, show every ISO week of this year as a column (a "year board"). */
+  year?: number | null;
 }
 
 type Bucket =
@@ -91,6 +96,8 @@ function WeekColumn({
   cards,
   labels,
   accent,
+  highlight,
+  scrollToOnMount,
   onOpenCard,
   onAdd,
 }: {
@@ -100,12 +107,20 @@ function WeekColumn({
   cards: Card[];
   labels: Label[];
   accent?: boolean;
+  highlight?: boolean;
+  scrollToOnMount?: boolean;
   onOpenCard: (id: string) => void;
   onAdd: (title: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: bucketId(bucket), data: { bucket } });
+  const localRef = useRef<HTMLDivElement | null>(null);
   const [adding, setAdding] = useState(false);
   const [title2, setTitle2] = useState('');
+
+  useEffect(() => {
+    if (scrollToOnMount && localRef.current)
+      localRef.current.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [scrollToOnMount]);
 
   function submit() {
     const t = title2.trim();
@@ -116,9 +131,16 @@ function WeekColumn({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el);
+        localRef.current = el;
+      }}
       className={`flex flex-col w-72 shrink-0 max-h-full rounded-xl border ${
-        isOver ? 'border-accent bg-accent/5' : 'border-edge bg-panel'
+        isOver
+          ? 'border-accent bg-accent/5'
+          : highlight
+          ? 'border-accent ring-1 ring-accent/40 bg-accent/5'
+          : 'border-edge bg-panel'
       }`}
     >
       <div className="flex items-center gap-1.5 px-3 py-2">
@@ -183,7 +205,7 @@ function WeekColumn({
   );
 }
 
-export function KanbanWeekView({ board, onOpenCard }: KanbanWeekViewProps) {
+export function KanbanWeekView({ board, onOpenCard, year }: KanbanWeekViewProps) {
   const { setCardDate, setCardDone, addCard } = useBoardCardMutations(board.id);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
@@ -217,18 +239,27 @@ export function KanbanWeekView({ board, onOpenCard }: KanbanWeekViewProps) {
       byWeek.get(key)!.cards.push(card);
     }
 
-    // Always show the current week + next 3, so there's room for upcoming items.
-    const thisMonday = startOfWeek(new Date());
-    for (let i = 0; i < 4; i++) {
-      const monday = addDays(thisMonday, i * 7);
-      const key = weekKey(monday);
-      if (!byWeek.has(key)) byWeek.set(key, { monday, cards: [] });
+    if (year) {
+      // Year board: show every ISO week of the year, even empty ones.
+      for (let w = 1; w <= isoWeeksInYear(year); w++) {
+        const monday = mondayOfIsoWeek(year, w);
+        const key = weekKey(monday);
+        if (!byWeek.has(key)) byWeek.set(key, { monday, cards: [] });
+      }
+    } else {
+      // Rolling board: show the current week + next 3, for upcoming items.
+      const thisMonday = startOfWeek(new Date());
+      for (let i = 0; i < 4; i++) {
+        const monday = addDays(thisMonday, i * 7);
+        const key = weekKey(monday);
+        if (!byWeek.has(key)) byWeek.set(key, { monday, cards: [] });
+      }
     }
 
     const buckets = [...byWeek.values()].sort((a, b) => a.monday.getTime() - b.monday.getTime());
     for (const b of buckets) b.cards.sort((a, c) => (parseDue(a.dueDate)!.getTime() - parseDue(c.dueDate)!.getTime()));
     return { weekBuckets: buckets, noDateCards: noDate, doneCards: done };
-  }, [allCards]);
+  }, [allCards, year]);
 
   function handleDragStart(e: DragStartEvent) {
     setActiveCardId(String(e.active.id));
@@ -262,6 +293,7 @@ export function KanbanWeekView({ board, onOpenCard }: KanbanWeekViewProps) {
   }
 
   const activeCard = allCards.find((c) => c.id === activeCardId);
+  const currentMonday = startOfWeek(new Date());
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -275,18 +307,23 @@ export function KanbanWeekView({ board, onOpenCard }: KanbanWeekViewProps) {
             onOpenCard={onOpenCard}
             onAdd={(t) => defaultColumnId && addCard(defaultColumnId, t, null)}
           />
-          {weekBuckets.map((wb) => (
-            <WeekColumn
-              key={weekKey(wb.monday)}
-              bucket={{ kind: 'week', monday: wb.monday }}
-              title={weekLabel(wb.monday)}
-              subtitle={weekRangeLabel(wb.monday)}
-              cards={wb.cards}
-              labels={board.labels}
-              onOpenCard={onOpenCard}
-              onAdd={(t) => defaultColumnId && addCard(defaultColumnId, t, dayToISO(startOfDay(wb.monday)))}
-            />
-          ))}
+          {weekBuckets.map((wb) => {
+            const isCurrent = sameDay(wb.monday, currentMonday);
+            return (
+              <WeekColumn
+                key={weekKey(wb.monday)}
+                bucket={{ kind: 'week', monday: wb.monday }}
+                title={weekLabel(wb.monday)}
+                subtitle={weekRangeLabel(wb.monday)}
+                cards={wb.cards}
+                labels={board.labels}
+                highlight={isCurrent}
+                scrollToOnMount={!!year && isCurrent}
+                onOpenCard={onOpenCard}
+                onAdd={(t) => defaultColumnId && addCard(defaultColumnId, t, dayToISO(startOfDay(wb.monday)))}
+              />
+            );
+          })}
           <WeekColumn
             bucket={{ kind: 'done' }}
             title={<span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-success" /> Done</span>}

@@ -7,9 +7,17 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.21.4**
+Current Version: **0.22.0**
 
 ---
+
+## [0.22.0] — 2026-06-15
+
+### Added
+- **Year boards** — a board can now represent a whole year. A new **year-board** button in the sidebar (calendar icon) creates "Calendar &lt;year&gt;" pre-set to **Kanban → Group by: Week**, showing **every ISO week of that year** as a column (even empty ones, current week highlighted and scrolled into view), with a ready label palette (Earnings / Notes / Michael's health / Jen's health). You can also turn any existing board into a year board from the new **Year / import** button in the board header.
+- **Weekly importer** — the **Year / import** dialog imports a weekly table (paste the Evernote HTML export or `.enex` contents). Each "Week N" row becomes cards filed into that week: one card per Notes/health bullet (auto-labelled) plus an earnings card, each dated to that week so it also appears on the Calendar. Shows a preview count before importing.
+- Together with the existing two-way Calendar↔Kanban sync, adding an item on a calendar day automatically files it into the correct week.
+
 
 ## [0.21.4] — 2026-06-15
 

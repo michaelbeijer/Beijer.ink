@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, LayoutGrid } from 'lucide-react';
+import { Star, LayoutGrid, CalendarRange } from 'lucide-react';
 import { getBoard, updateBoard } from '../../api/boards';
 import { useBoardViewPrefs } from '../../hooks/useBoardViewPrefs';
 import { ViewSwitcher } from './ViewSwitcher';
@@ -10,6 +10,7 @@ import { CalendarView } from './CalendarView';
 import { TableView } from './TableView';
 import { ListView } from './ListView';
 import { CardModal } from './CardModal';
+import { YearImportDialog } from './YearImportDialog';
 
 interface BoardViewProps {
   boardId: string;
@@ -21,8 +22,9 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [boardName, setBoardName] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
-  const { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode } =
+  const { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode, year, setYear } =
     useBoardViewPrefs(boardId);
 
   const { data: board } = useQuery({
@@ -104,6 +106,19 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
         </button>
 
         <div className="flex-1" />
+        {year && (
+          <span className="text-xs text-ink-muted px-2 py-0.5 rounded bg-muted-bg" title="This board shows every week of this year">
+            {year}
+          </span>
+        )}
+        <button
+          onClick={() => setShowImport(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-sm text-ink-muted hover:text-ink hover:bg-hover rounded-md transition-colors"
+          title="Set this board's year and import weekly data"
+        >
+          <CalendarRange className="w-4 h-4" />
+          <span className="hidden sm:inline">Year / import</span>
+        </button>
         <ViewSwitcher
           view={view}
           onViewChange={setView}
@@ -115,7 +130,7 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
       {/* Active view */}
       {view === 'kanban' &&
         (groupBy === 'week' ? (
-          <KanbanWeekView board={board} onOpenCard={setOpenCardId} />
+          <KanbanWeekView board={board} onOpenCard={setOpenCardId} year={year} />
         ) : (
           <KanbanView board={board} onOpenCard={setOpenCardId} />
         ))}
@@ -139,6 +154,15 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
             setOpenCardId(null);
             onOpenNote(noteId);
           }}
+        />
+      )}
+
+      {showImport && (
+        <YearImportDialog
+          board={board}
+          year={year}
+          onSetYear={setYear}
+          onClose={() => setShowImport(false)}
         />
       )}
     </div>

@@ -111,4 +111,18 @@ export function dayToISO(d: Date): string {
   return utc.toISOString();
 }
 
+/** Monday (00:00 local) of ISO week `week` in `year`. ISO week 1 contains 4 Jan. */
+export function mondayOfIsoWeek(year: number, week: number): Date {
+  const jan4 = new Date(year, 0, 4);
+  return addDays(startOfWeek(jan4), (week - 1) * 7);
+}
+
+/** Number of ISO weeks in a year (52 or 53). */
+export function isoWeeksInYear(year: number): number {
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const jan1 = new Date(year, 0, 1).getDay(); // 0=Sun … 4=Thu … 6=Sat
+  // 53 weeks when the year starts on a Thursday, or on a Wednesday in a leap year.
+  return jan1 === 4 || (isLeap && jan1 === 3) ? 53 : 52;
+}
+
 export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

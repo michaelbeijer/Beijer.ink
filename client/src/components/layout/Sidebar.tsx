@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { PenLine, FolderPlus, FilePlus, LayoutGrid, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
+import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
 import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
@@ -307,6 +307,40 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     },
   });
 
+  // "New year board": a board pre-set to show every week of a year, with a
+  // ready label palette — open it on the week-grouped Kanban straight away.
+  const createYearBoardMutation = useMutation({
+    mutationFn: async (yr: number) => {
+      const board = await createBoard({ name: `Calendar ${yr}` });
+      await updateBoard(board.id, {
+        labels: [
+          { id: crypto.randomUUID(), name: 'Earnings', color: 'green' },
+          { id: crypto.randomUUID(), name: 'Notes', color: 'blue' },
+          { id: crypto.randomUUID(), name: "Michael's health", color: 'orange' },
+          { id: crypto.randomUUID(), name: "Jen's health", color: 'purple' },
+        ],
+      });
+      try {
+        localStorage.setItem(`bink:board:${board.id}:view`, 'kanban');
+        localStorage.setItem(`bink:board:${board.id}:groupBy`, 'week');
+        localStorage.setItem(`bink:board:${board.id}:year`, String(yr));
+      } catch { /* ignore storage errors */ }
+      return board;
+    },
+    onSuccess: (board) => {
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      onSelectBoard?.(board.id);
+    },
+  });
+
+  function handleNewYearBoard() {
+    const input = window.prompt('New year board — which year?', String(new Date().getFullYear()));
+    if (!input) return;
+    const yr = parseInt(input, 10);
+    if (!yr || yr < 1970 || yr > 3000) return;
+    createYearBoardMutation.mutate(yr);
+  }
+
   const deleteBoardMutation = useMutation({
     mutationFn: deleteBoard,
     onSuccess: (_, id) => {
@@ -374,6 +408,13 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
             title="New board"
           >
             <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleNewYearBoard}
+            className="p-1 text-ink-faint hover:text-ink hover:bg-hover rounded transition-colors"
+            title="New year board (all weeks pre-filled)"
+          >
+            <CalendarRange className="w-4 h-4" />
           </button>
         </div>
       </div>

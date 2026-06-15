@@ -28,6 +28,7 @@ export function useBoardViewPrefs(boardId: string) {
   const viewKey = `bink:board:${boardId}:view`;
   const groupKey = `bink:board:${boardId}:groupBy`;
   const calKey = `bink:board:${boardId}:calendarMode`;
+  const yearKey = `bink:board:${boardId}:year`;
 
   const [view, setViewState] = useState<BoardViewType>(
     () => read(viewKey, 'kanban') as BoardViewType
@@ -38,6 +39,12 @@ export function useBoardViewPrefs(boardId: string) {
   const [calendarMode, setCalendarModeState] = useState<CalendarMode>(
     () => read(calKey, 'month') as CalendarMode
   );
+  // A "year board" shows every ISO week of that year as a column; null = off.
+  const [year, setYearState] = useState<number | null>(() => {
+    const raw = read(yearKey, '');
+    const n = parseInt(raw, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  });
 
   const setView = useCallback(
     (v: BoardViewType) => {
@@ -63,5 +70,13 @@ export function useBoardViewPrefs(boardId: string) {
     [calKey]
   );
 
-  return { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode };
+  const setYear = useCallback(
+    (y: number | null) => {
+      setYearState(y);
+      write(yearKey, y && y > 0 ? String(y) : '');
+    },
+    [yearKey]
+  );
+
+  return { view, setView, groupBy, setGroupBy, calendarMode, setCalendarMode, year, setYear };
 }
