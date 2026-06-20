@@ -26,6 +26,11 @@ export const config = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google/callback',
 
+  // autofingers.com publishing. The export feed is public but gated by this token;
+  // the "Publish now" button POSTs to a Cloudflare deploy hook to rebuild the site.
+  autofingersExportToken: process.env.AUTOFINGERS_EXPORT_TOKEN || '',
+  cloudflareDeployHook: process.env.CLOUDFLARE_DEPLOY_HOOK_URL || '',
+
   isDev() {
     return this.nodeEnv === 'development';
   },

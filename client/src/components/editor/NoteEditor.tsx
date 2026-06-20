@@ -13,6 +13,7 @@ import { SearchHighlightBar } from './SearchHighlightBar';
 import { BlockEditor } from './BlockEditor';
 import { TableOfContents } from './TableOfContents';
 import { TableMenu } from './TableMenu';
+import { PublishPanel } from './PublishPanel';
 import { splitBlocks } from '../../utils/blockParser';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
@@ -366,6 +367,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           )}
         </div>
       </div>
+
+      {/* Publishing controls — only for notes in a notebook flagged for autofingers */}
+      {note?.notebook?.publishTarget && <PublishPanel note={note} />}
 
       {/* Editor area */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">

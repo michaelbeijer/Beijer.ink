@@ -37,6 +37,8 @@ model Notebook {
   sortOrder  Int        @default(0) @map("sort_order")
   parentId   String?    @map("parent_id")
   isFavorite Boolean    @default(false) @map("is_favorite")
+  // When true, every note in this notebook is published to autofingers.com.
+  publishTarget Boolean @default(false) @map("publish_target")
   parent     Notebook?  @relation("NotebookTree", fields: [parentId], references: [id], onDelete: Cascade)
   children   Notebook[] @relation("NotebookTree")
   notes      Note[]
@@ -50,6 +52,10 @@ model Note {
   id         String    @id @default(cuid())
   title      String    @default("Untitled")
   content    String    @default("")
+  // autofingers.com publishing: kicker line + optional URL-slug override.
+  // Only meaningful for notes in a publishTarget notebook; null otherwise.
+  subtitle   String?
+  slug       String?
   notebookId String?   @map("notebook_id")
   notebook   Notebook? @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   isPinned   Boolean   @default(false) @map("is_pinned")

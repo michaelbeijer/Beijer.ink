@@ -68,7 +68,7 @@ export async function getNoteById(id: string) {
   return prisma.note.findUnique({
     where: { id },
     include: {
-      notebook: { select: { id: true, name: true } },
+      notebook: { select: { id: true, name: true, publishTarget: true } },
     },
   });
 }
@@ -97,6 +97,8 @@ export async function updateNote(
     isPinned?: boolean;
     isFavorite?: boolean;
     sortOrder?: number;
+    subtitle?: string | null;
+    slug?: string | null;
   }
 ) {
   const updateData: Record<string, unknown> = { ...data };

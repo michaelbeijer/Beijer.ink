@@ -5,6 +5,7 @@ export interface Notebook {
   sortOrder: number;
   parentId: string | null;
   isFavorite: boolean;
+  publishTarget?: boolean;
   createdAt: string;
   updatedAt: string;
   _count: { notes: number };

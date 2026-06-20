@@ -16,6 +16,7 @@ import searchRoutes from './routes/search.routes.js';
 import scratchpadRoutes from './routes/scratchpad.routes.js';
 import backupRoutes from './routes/backup.routes.js';
 import googleRoutes from './routes/google.routes.js';
+import publishRoutes from './routes/publish.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +45,8 @@ export function createApp() {
   app.use('/api/backup', requireAuth, backupRoutes);
   // Google routes gate auth per-route (the OAuth callback must stay public).
   app.use('/api/google', googleRoutes);
+  // Publish routes gate auth per-route (the export feed is public + token-gated).
+  app.use('/api/publish', publishRoutes);
 
   // Serve static frontend in production only
   const publicPath = path.join(__dirname, '..', 'public');

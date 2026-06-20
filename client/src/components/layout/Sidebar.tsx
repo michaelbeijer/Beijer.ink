@@ -143,6 +143,16 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     },
   });
 
+  // Flag a notebook as the autofingers.com publish source (every note in it goes live).
+  const toggleNotebookPublishMutation = useMutation({
+    mutationFn: ({ id, publishTarget }: { id: string; publishTarget: boolean }) =>
+      updateNotebook(id, { publishTarget }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notebooks'] });
+      queryClient.invalidateQueries({ queryKey: ['note'] }); // open note refetches → PublishPanel toggles
+    },
+  });
+
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -289,6 +299,11 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
 
   function handleToggleNoteFavorite(id: string, currentState: boolean) {
     toggleNoteFavoriteMutation.mutate({ id, isFavorite: !currentState });
+    setContextMenuId(null);
+  }
+
+  function handleToggleNotebookPublish(id: string, currentState: boolean) {
+    toggleNotebookPublishMutation.mutate({ id, publishTarget: !currentState });
     setContextMenuId(null);
   }
 
@@ -600,6 +615,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
               onCreateChild={handleCreateChild}
               onCreateNote={handleCreateNoteInNotebook}
               onToggleFavorite={handleToggleNotebookFavorite}
+              onTogglePublish={handleToggleNotebookPublish}
               onClose={onClose}
             />
           );

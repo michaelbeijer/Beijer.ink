@@ -12,4 +12,5 @@ export const updateNotebookSchema = z.object({
   icon: z.string().optional(),
   sortOrder: z.number().int().optional(),
   isFavorite: z.boolean().optional(),
+  publishTarget: z.boolean().optional(),
 });

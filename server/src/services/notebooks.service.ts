@@ -21,7 +21,7 @@ export async function createNotebook(data: { name: string; parentId?: string; ic
 
 export async function updateNotebook(
   id: string,
-  data: { name?: string; parentId?: string | null; icon?: string; sortOrder?: number; isFavorite?: boolean }
+  data: { name?: string; parentId?: string | null; icon?: string; sortOrder?: number; isFavorite?: boolean; publishTarget?: boolean }
 ) {
   return prisma.notebook.update({
     where: { id },

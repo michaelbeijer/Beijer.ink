@@ -13,6 +13,8 @@ import {
   FilePlus,
   Star,
   StarOff,
+  UploadCloud,
+  CloudOff,
 } from 'lucide-react';
 import type { FlatNotebookNode } from '../../utils/flattenNotebookTree';
 import type { Notebook } from '../../types/notebook';
@@ -41,6 +43,7 @@ interface SidebarNotebookNodeProps {
   onCreateChild: (parentId: string) => void;
   onCreateNote: (notebookId: string) => void;
   onToggleFavorite: (id: string, currentState: boolean) => void;
+  onTogglePublish: (id: string, currentState: boolean) => void;
   onClose?: () => void;
 }
 
@@ -66,6 +69,7 @@ export function SidebarNotebookNode({
   onCreateChild,
   onCreateNote,
   onToggleFavorite,
+  onTogglePublish,
   onClose,
 }: SidebarNotebookNodeProps) {
   const nb = node.notebook;
@@ -173,6 +177,13 @@ export function SidebarNotebookNode({
         <span className="flex-1 text-sm truncate">{nb.name}</span>
       )}
 
+      {nb.publishTarget && (
+        <UploadCloud
+          className="w-3 h-3 shrink-0 text-accent"
+          aria-label="Published to autofingers.com"
+        />
+      )}
+
       <span className="text-[10px] text-ink-dim tabular-nums">
         {nb._count.notes || ''}
       </span>
@@ -212,6 +223,20 @@ export function SidebarNotebookNode({
                 <><StarOff className="w-3.5 h-3.5" /> Remove from Favourites</>
               ) : (
                 <><Star className="w-3.5 h-3.5" /> Add to Favourites</>
+              )}
+            </button>
+
+            <button
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-ink-secondary hover:bg-hover"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePublish(nb.id, !!nb.publishTarget);
+              }}
+            >
+              {nb.publishTarget ? (
+                <><CloudOff className="w-3.5 h-3.5" /> Stop publishing to autofingers</>
+              ) : (
+                <><UploadCloud className="w-3.5 h-3.5" /> Publish to autofingers</>
               )}
             </button>
 

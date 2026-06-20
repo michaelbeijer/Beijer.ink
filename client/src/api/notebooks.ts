@@ -19,3 +19,9 @@ export async function updateNotebook(id: string, body: Partial<Notebook>): Promi
 export async function deleteNotebook(id: string): Promise<void> {
   await api.delete(`/notebooks/${id}`);
 }
+
+// "Publish now" — pokes the Cloudflare deploy hook so autofingers.com rebuilds.
+export async function publishAutofingers(): Promise<{ triggered: boolean; status?: number }> {
+  const { data } = await api.post<{ triggered: boolean; status?: number }>('/publish/trigger');
+  return data;
+}
