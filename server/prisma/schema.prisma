@@ -114,3 +114,21 @@ model Card {
   @@index([noteId])
   @@map("cards")
 }
+
+// Read-only Google Calendar overlay (issue #2). Single-user app, so this is a
+// singleton holding the OAuth tokens plus the per-calendar source config
+// (which calendars to show, their name + colour). Google events are NEVER
+// written into `cards` — they're an external read-only layer.
+model GoogleCalendarConnection {
+  id           String    @id @default("default")
+  userId       String    @unique @map("user_id")
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  tokenExpiry  DateTime? @map("token_expiry")
+  scope        String?
+  calendars    Json      @default("[]") // [{ calendarId, name, color, enabled }]
+  connectedAt  DateTime? @map("connected_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("google_calendar_connections")
+}

@@ -15,6 +15,7 @@ import boardsRoutes from './routes/boards.routes.js';
 import searchRoutes from './routes/search.routes.js';
 import scratchpadRoutes from './routes/scratchpad.routes.js';
 import backupRoutes from './routes/backup.routes.js';
+import googleRoutes from './routes/google.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +42,8 @@ export function createApp() {
   app.use('/api/search', requireAuth, searchRoutes);
   app.use('/api/scratchpad', requireAuth, scratchpadRoutes);
   app.use('/api/backup', requireAuth, backupRoutes);
+  // Google routes gate auth per-route (the OAuth callback must stay public).
+  app.use('/api/google', googleRoutes);
 
   // Serve static frontend in production only
   const publicPath = path.join(__dirname, '..', 'public');

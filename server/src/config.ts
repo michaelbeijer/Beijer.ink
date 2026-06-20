@@ -21,6 +21,11 @@ export const config = {
   googleDriveRefreshToken: process.env.GOOGLE_DRIVE_REFRESH_TOKEN || '',
   googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID || '',
 
+  // Google Calendar read-only overlay (OAuth user flow) — issue #2
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google/callback',
+
   isDev() {
     return this.nodeEnv === 'development';
   },
