@@ -5,6 +5,7 @@ import { getBoard, updateBoard } from '../../api/boards';
 import type { Board, BoardType, BoardSettings } from '../../types/board';
 import { useBoardViewPrefs } from '../../hooks/useBoardViewPrefs';
 import { ViewSwitcher } from './ViewSwitcher';
+import { BoardOptionsMenu } from './BoardOptionsMenu';
 import { KanbanView } from './KanbanView';
 import { KanbanWeekView } from './KanbanWeekView';
 import { CalendarView } from './CalendarView';
@@ -17,12 +18,6 @@ interface BoardViewProps {
   boardId: string;
   onOpenNote: (noteId: string) => void;
 }
-
-const TYPE_LABELS: Record<BoardType, string> = {
-  calendar: 'Calendar',
-  todo: 'To-do',
-  freeform: 'Free-form',
-};
 
 export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
   const { data: board } = useQuery({
@@ -172,18 +167,6 @@ function BoardContent({ board, onOpenNote }: { board: Board; onOpenNote: (noteId
 
         <div className="flex-1" />
 
-        {/* Board type — defines the board everywhere (stored on the server) */}
-        <select
-          value={board.type}
-          onChange={(e) => handleTypeChange(e.target.value as BoardType)}
-          className="text-xs bg-muted-bg text-ink-muted border border-edge rounded-md px-2 py-1 outline-none focus:border-accent cursor-pointer"
-          title="Board type"
-        >
-          {(Object.keys(TYPE_LABELS) as BoardType[]).map((t) => (
-            <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-          ))}
-        </select>
-
         {isCalendar && year && (
           <span className="text-xs text-ink-muted px-2 py-0.5 rounded bg-muted-bg" title="This board shows every week of this year">
             {year}
@@ -204,6 +187,15 @@ function BoardContent({ board, onOpenNote }: { board: Board; onOpenNote: (noteId
           onViewChange={setView}
           groupBy={groupBy}
           onGroupByChange={setGroupBy}
+        />
+
+        {/* Board "Purpose" (type) + intrinsic settings live here, demoted out of
+            the toolbar since they're intrinsic and rarely changed. */}
+        <BoardOptionsMenu
+          type={board.type}
+          onTypeChange={handleTypeChange}
+          showOverdue={showOverdue}
+          onShowOverdueChange={setShowOverdue}
         />
       </div>
 

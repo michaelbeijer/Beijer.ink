@@ -8,11 +8,15 @@ interface ViewSwitcherProps {
   onGroupByChange: (g: KanbanGroupBy) => void;
 }
 
+// User-facing labels only — the internal ids (kanban/calendar/table/list) are
+// unchanged so there's no state/localStorage migration. "Kanban" reads as
+// "Board"; the old "List" view becomes "Agenda" (the duplicate "List" — it also
+// being a grouping option — is what made the toolbar confusing).
 const VIEWS: { id: BoardViewType; label: string; Icon: typeof Columns3 }[] = [
-  { id: 'kanban', label: 'Kanban', Icon: Columns3 },
+  { id: 'kanban', label: 'Board', Icon: Columns3 },
   { id: 'calendar', label: 'Calendar', Icon: Calendar },
   { id: 'table', label: 'Table', Icon: Table },
-  { id: 'list', label: 'List', Icon: List },
+  { id: 'list', label: 'Agenda', Icon: List },
 ];
 
 export function ViewSwitcher({ view, onViewChange, groupBy, onGroupByChange }: ViewSwitcherProps) {
@@ -37,7 +41,7 @@ export function ViewSwitcher({ view, onViewChange, groupBy, onGroupByChange }: V
 
       {view === 'kanban' && (
         <div className="flex items-center gap-1 text-sm text-ink-muted">
-          <span className="hidden md:inline">Group by:</span>
+          <span className="hidden md:inline">Arrange by:</span>
           <div className="flex items-center gap-0.5 bg-muted-bg rounded-lg p-0.5">
             <button
               onClick={() => onGroupByChange('list')}
@@ -45,7 +49,7 @@ export function ViewSwitcher({ view, onViewChange, groupBy, onGroupByChange }: V
                 groupBy === 'list' ? 'bg-card text-ink shadow-sm' : 'text-ink-muted hover:text-ink'
               }`}
             >
-              List
+              Lists
             </button>
             <button
               onClick={() => onGroupByChange('week')}
@@ -53,7 +57,7 @@ export function ViewSwitcher({ view, onViewChange, groupBy, onGroupByChange }: V
                 groupBy === 'week' ? 'bg-card text-ink shadow-sm' : 'text-ink-muted hover:text-ink'
               }`}
             >
-              Week
+              Weeks
             </button>
           </div>
         </div>

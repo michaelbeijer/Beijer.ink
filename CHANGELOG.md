@@ -7,9 +7,20 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.24.0**
+Current Version: **0.25.0**
 
 ---
+
+## [0.25.0] — 2026-06-20
+
+### Changed
+- **Unified the board controls so the same word never means two things.** The board toolbar had three overlapping selectors (board *type*, *view*, and *group-by*) with colliding names — "List" appeared both as a view and as a Kanban grouping, and "Calendar" meant a board type, a view, *and* the sidebar button. Cleaned up (display labels only — the internal view/grouping ids are unchanged, so nothing in your saved layouts migrates):
+  - **Kanban view → "Board"**, and the old **List view → "Agenda"** (no more duplicate "List").
+  - **"Group by" → "Arrange by"**, with **Lists / Weeks** (was List / Week) — and room to add **Source** later.
+  - **Board type → "Purpose"**, moved out of the toolbar into a new **Options** menu (⚙) alongside a **Show overdue items** toggle. It's intrinsic and rarely changed, so it no longer competes with the view tabs you use constantly.
+  - The sidebar's app-level calendar is now **"All Calendar"** (every board), distinct from a single board's **Calendar** view.
+- First step of a broader planning/calendar/Kanban unification ([#1](https://github.com/michaelbeijer/Beijer.ink/issues/1)); the read-only Google Calendar overlay is tracked in [#2](https://github.com/michaelbeijer/Beijer.ink/issues/2).
+
 
 ## [0.24.0] — 2026-06-16
 
