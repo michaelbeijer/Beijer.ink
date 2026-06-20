@@ -51,6 +51,9 @@ model Notebook {
 model Note {
   id         String    @id @default(cuid())
   title      String    @default("Untitled")
+  // When true the title was set explicitly and is NOT re-derived from the first
+  // line on content edits (default behaviour stays first-line-as-title).
+  titleManual Boolean  @default(false) @map("title_manual")
   content    String    @default("")
   // autofingers.com publishing: kicker line + optional URL-slug override.
   // Only meaningful for notes in a publishTarget notebook; null otherwise.

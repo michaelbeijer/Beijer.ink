@@ -1,6 +1,7 @@
 export interface Note {
   id: string;
   title: string;
+  titleManual: boolean;
   content: string;
   subtitle: string | null;
   slug: string | null;

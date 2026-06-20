@@ -25,18 +25,28 @@ function slugify(input: string): string {
 // to the live page, and trigger an immediate rebuild.
 export function PublishPanel({ note }: { note: Note }) {
   const queryClient = useQueryClient();
+  const [title, setTitle] = useState(note.title ?? '');
   const [subtitle, setSubtitle] = useState(note.subtitle ?? '');
   const [slug, setSlug] = useState(note.slug ?? '');
 
   // Reset fields when switching to a different note
   useEffect(() => {
+    setTitle(note.title ?? '');
     setSubtitle(note.subtitle ?? '');
     setSlug(note.slug ?? '');
   }, [note.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep the title field in sync when it's still auto-derived from the first line
+  useEffect(() => {
+    if (!note.titleManual) setTitle(note.title ?? '');
+  }, [note.title, note.titleManual]);
+
   const saveMutation = useMutation({
-    mutationFn: (body: { subtitle?: string | null; slug?: string | null }) => updateNote(note.id, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note', note.id] }),
+    mutationFn: (body: { title?: string; subtitle?: string | null; slug?: string | null }) => updateNote(note.id, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['note', note.id] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] }); // sidebar name follows the title
+    },
   });
 
   const publishMutation = useMutation({ mutationFn: publishAutofingers });
@@ -44,6 +54,10 @@ export function PublishPanel({ note }: { note: Note }) {
   const effectiveSlug = slugify((slug || '').trim() || note.title);
   const liveUrl = `${SITE}/writing/${effectiveSlug}`;
 
+  const saveTitle = () => {
+    const v = title.trim();
+    if (v !== (note.title ?? '').trim()) saveMutation.mutate({ title: v });
+  };
   const saveSubtitle = () => {
     const v = subtitle.trim();
     if (v !== (note.subtitle ?? '')) saveMutation.mutate({ subtitle: v || null });
@@ -62,6 +76,19 @@ export function PublishPanel({ note }: { note: Note }) {
       <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-accent shrink-0">
         <UploadCloud className="w-3.5 h-3.5" /> autofingers
       </span>
+
+      <label className="flex items-center gap-1.5 text-xs text-ink-faint">
+        Title
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={saveTitle}
+          onKeyDown={blurOnEnter}
+          placeholder="(from first line)"
+          title="Set the title here and your note body can stay pure — no heading needed. Clear it to go back to using the first line."
+          className="w-48 max-w-[34vw] px-2 py-1 text-sm bg-surface border border-edge rounded text-ink placeholder:text-ink-dim focus:outline-none focus:border-accent"
+        />
+      </label>
 
       <label className="flex items-center gap-1.5 text-xs text-ink-faint">
         Subtitle

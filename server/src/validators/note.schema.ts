@@ -7,6 +7,7 @@ export const createNoteSchema = z.object({
 
 export const updateNoteSchema = z.object({
   content: z.string().optional(),
+  title: z.string().max(500).optional(),
   notebookId: z.string().optional(),
   isPinned: z.boolean().optional(),
   isFavorite: z.boolean().optional(),

@@ -31,7 +31,7 @@ export async function createNote(body: {
 
 export async function updateNote(
   id: string,
-  body: Partial<Pick<Note, 'content' | 'notebookId' | 'isPinned' | 'isFavorite' | 'subtitle' | 'slug'>>
+  body: Partial<Pick<Note, 'content' | 'title' | 'notebookId' | 'isPinned' | 'isFavorite' | 'subtitle' | 'slug'>>
 ): Promise<Note> {
   const { data } = await api.patch<Note>(`/notes/${id}`, body);
   return data;

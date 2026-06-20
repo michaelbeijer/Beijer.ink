@@ -36,6 +36,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   const saveRef = useRef(save);
   saveRef.current = save;
   const [charCount, setCharCount] = useState(0);
+  const titleManualRef = useRef(false);
   const [showToolbar, setShowToolbar] = useState(() => {
     const stored = localStorage.getItem(TOOLBAR_KEY);
     return stored === null ? true : stored === 'true';
@@ -66,7 +67,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           { queryKey: ['notes'] },
           (old) =>
             old?.map((n) =>
-              n.id === noteId ? { ...n, title: firstLine, content: html } : n
+              n.id === noteId
+                ? { ...n, content: html, ...(titleManualRef.current ? {} : { title: firstLine }) }
+                : n
             )
         );
         saveRef.current(html);
@@ -88,6 +91,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     queryKey: ['note', noteId],
     queryFn: () => getNoteById(noteId),
   });
+  titleManualRef.current = !!note?.titleManual;
 
   const isLargeNote = (note?.content?.length ?? 0) >= BLOCK_MODE_THRESHOLD;
 
