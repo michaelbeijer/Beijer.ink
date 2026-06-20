@@ -378,6 +378,13 @@
   margin: 1em 0 0.5em;
 }
 
+/* The first line is the title — make it stand out clearly above the body. */
+.tiptap-editor .ProseMirror > h1:first-child,
+.tiptap-content > h1:first-child {
+  font-size: 2em;
+  margin-top: 0.2em;
+}
+
 .tiptap-editor .ProseMirror h2,
 .tiptap-content h2 {
   font-size: 1.3em;

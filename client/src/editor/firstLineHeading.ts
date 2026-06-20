@@ -32,7 +32,7 @@ export const FirstLineHeading = Extension.create({
           const isWrongLevelHeading = first.type === heading && first.attrs.level !== 1;
           if (!isParagraph && !isWrongLevelHeading) return null;
 
-          const tr = newState.tr.setNodeMarkup(0, heading, { ...first.attrs, level: 1 });
+          const tr = newState.tr.setNodeMarkup(0, heading, { level: 1 });
           tr.setMeta('addToHistory', false);
           return tr;
         },
