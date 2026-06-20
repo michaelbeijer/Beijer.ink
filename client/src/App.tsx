@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -58,6 +59,17 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Clean up the ?google=connected|error flag the OAuth callback bounces back
+  // with (the full reload already refetches Google status fresh).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('google')) {
+      params.delete('google');
+      const qs = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
+    }
+  }, []);
+
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>

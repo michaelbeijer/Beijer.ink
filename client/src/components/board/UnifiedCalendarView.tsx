@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, CalendarDays, Loader2 } from 'lucide-react';
-import type { CalendarCard, Board, Card } from '../../types/board';
+import { ChevronLeft, ChevronRight, CalendarDays, Loader2, ExternalLink } from 'lucide-react';
+import type { Board, Card } from '../../types/board';
 import { getCalendarCards, getBoard } from '../../api/boards';
+import { getGoogleEvents, getGoogleStatus } from '../../api/google';
 import {
   monthGrid, monthLabel, addMonths, addDays, startOfWeek, startOfDay,
   weekRangeLabel, isoWeek, parseDue, WEEKDAY_LABELS,
@@ -16,6 +17,22 @@ const BOARD_COLORS = [
 ];
 
 type CalMode = 'month' | 'week' | 'weeks';
+
+// One thing shown on the calendar — a native Beijer.ink card OR a read-only
+// external Google event. The UI treats them uniformly (a dated, colour-coded
+// chip) but only native items open the editor; external ones open in Google.
+interface DisplayItem {
+  key: string;
+  sourceId: string;     // boardId (native) | calendarId (Google) — the colour/filter key
+  sourceName: string;
+  color: string;
+  title: string;
+  date: Date | null;    // null only for native cards with no due date
+  done: boolean;
+  external: boolean;
+  href?: string;        // Google event link
+  card?: Card & { boardId: string }; // native, for opening the modal
+}
 
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -46,42 +63,96 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     queryKey: ['calendar'],
     queryFn: () => getCalendarCards(),
   });
+  // Read-only Google events (empty array when not connected/configured).
+  const { data: googleEvents = [] } = useQuery({
+    queryKey: ['google-events'],
+    queryFn: () => getGoogleEvents(),
+    staleTime: 60 * 1000,
+  });
+  // For the Google calendars' display names (events only carry the calendarId).
+  const { data: googleStatus } = useQuery({
+    queryKey: ['google-status'],
+    queryFn: getGoogleStatus,
+  });
 
   function setModePref(m: CalMode) { setMode(m); write('bink:calendar:mode', m); }
-  function toggleBoard(boardId: string) {
+  function toggleSource(id: string) {
     setHidden((prev) => {
       const next = new Set(prev);
-      if (next.has(boardId)) next.delete(boardId); else next.add(boardId);
+      if (next.has(id)) next.delete(id); else next.add(id);
       write('bink:calendar:hidden', JSON.stringify([...next]));
       return next;
     });
   }
 
-  // Distinct boards present in the dated cards, with a stable colour each.
-  const boards = useMemo(() => {
+  // Stable palette colour per native board.
+  const boardColor = useMemo(() => {
     const seen = new Map<string, string>();
     for (const c of cards) if (!seen.has(c.boardId)) seen.set(c.boardId, c.boardName);
     const list = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
-    return list.map(([id, name], i) => ({ id, name, color: BOARD_COLORS[i % BOARD_COLORS.length] }));
-  }, [cards]);
-  const colorOf = useMemo(() => {
     const m = new Map<string, string>();
-    for (const b of boards) m.set(b.id, b.color);
+    list.forEach(([id], i) => m.set(id, BOARD_COLORS[i % BOARD_COLORS.length]));
     return m;
-  }, [boards]);
+  }, [cards]);
 
-  // Group visible cards by local day.
-  const byDay = useMemo(() => {
-    const map = new Map<string, CalendarCard[]>();
+  const calName = useMemo(
+    () => new Map((googleStatus?.calendars ?? []).map((c) => [c.calendarId, c.name])),
+    [googleStatus]
+  );
+
+  // Native cards + external Google events as one uniform list.
+  const items = useMemo<DisplayItem[]>(() => {
+    const out: DisplayItem[] = [];
     for (const c of cards) {
-      if (hidden.has(c.boardId)) continue;
-      const d = parseDue(c.dueDate);
-      if (!d) continue;
-      const k = dayKey(d);
-      (map.get(k) ?? map.set(k, []).get(k)!).push(c);
+      out.push({
+        key: `c:${c.id}`,
+        sourceId: c.boardId,
+        sourceName: c.boardName,
+        color: boardColor.get(c.boardId) ?? '#64748b',
+        title: c.title,
+        date: parseDue(c.dueDate),
+        done: c.dueDone,
+        external: false,
+        card: c,
+      });
+    }
+    for (const e of googleEvents) {
+      out.push({
+        key: `g:${e.id}`,
+        sourceId: e.calendarId,
+        sourceName: calName.get(e.calendarId) ?? 'Google',
+        color: e.color || '#64748b',
+        title: e.title,
+        date: parseDue(e.start),
+        done: false,
+        external: true,
+        href: e.htmlLink,
+      });
+    }
+    return out;
+  }, [cards, googleEvents, boardColor, calName]);
+
+  // Distinct sources present (native boards + Google calendars) for the chips.
+  const sources = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; color: string; external: boolean }>();
+    for (const it of items) {
+      if (!seen.has(it.sourceId)) {
+        seen.set(it.sourceId, { id: it.sourceId, name: it.sourceName, color: it.color, external: it.external });
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [items]);
+
+  // Group visible items by local day.
+  const byDay = useMemo(() => {
+    const map = new Map<string, DisplayItem[]>();
+    for (const it of items) {
+      if (hidden.has(it.sourceId) || !it.date) continue;
+      const k = dayKey(it.date);
+      (map.get(k) ?? map.set(k, []).get(k)!).push(it);
     }
     return map;
-  }, [cards, hidden]);
+  }, [items, hidden]);
 
   const days = useMemo(() => {
     if (mode === 'week') {
@@ -91,26 +162,24 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     return monthGrid(anchor).map((c) => c.date);
   }, [mode, anchor]);
 
-  // Weeks (kanban-by-week) arrangement: one column per ISO week that has
-  // cards, plus a "No date" column — your To-do, Earnings, and (later) Google
-  // items side by side, by week, across every board.
+  // Weeks (kanban-by-week) arrangement: one column per ISO week with items,
+  // plus a "No date" column — To-do, Earnings and Google side by side, by week.
   const weekData = useMemo(() => {
     const empty = {
-      cols: [] as { key: string; label: string; sub: string; isThisWeek: boolean; cards: CalendarCard[] }[],
-      noDate: [] as CalendarCard[],
+      cols: [] as { key: string; label: string; sub: string; isThisWeek: boolean; items: DisplayItem[] }[],
+      noDate: [] as DisplayItem[],
     };
     if (mode !== 'weeks') return empty;
-    const map = new Map<number, { start: Date; cards: CalendarCard[] }>();
-    const noDate: CalendarCard[] = [];
-    for (const c of cards) {
-      if (hidden.has(c.boardId)) continue;
-      const d = parseDue(c.dueDate);
-      if (!d) { noDate.push(c); continue; }
-      const ws = startOfWeek(d);
+    const map = new Map<number, { start: Date; items: DisplayItem[] }>();
+    const noDate: DisplayItem[] = [];
+    for (const it of items) {
+      if (hidden.has(it.sourceId)) continue;
+      if (!it.date) { noDate.push(it); continue; }
+      const ws = startOfWeek(it.date);
       const key = ws.getTime();
       let bucket = map.get(key);
-      if (!bucket) { bucket = { start: ws, cards: [] }; map.set(key, bucket); }
-      bucket.cards.push(c);
+      if (!bucket) { bucket = { start: ws, items: [] }; map.set(key, bucket); }
+      bucket.items.push(it);
     }
     const thisWeek = startOfWeek(startOfDay(new Date())).getTime();
     const cols = [...map.values()]
@@ -120,15 +189,15 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
         label: `Week ${isoWeek(w.start)}`,
         sub: weekRangeLabel(w.start),
         isThisWeek: w.start.getTime() === thisWeek,
-        cards: w.cards.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')),
+        items: w.items.sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0)),
       }));
     return { cols, noDate };
-  }, [mode, cards, hidden]);
+  }, [mode, items, hidden]);
 
   const monthOfAnchor = anchor.getMonth();
   const today = startOfDay(new Date());
 
-  async function handleOpenCard(c: CalendarCard) {
+  async function handleOpenCard(c: { id: string; boardId: string }) {
     setOpening(true);
     try {
       const board = await getBoard(c.boardId);
@@ -144,17 +213,24 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
   }
 
-  // One card chip, colour-coded by its board (left border). `showDate` adds the
-  // day under the title — useful in the Weeks columns where a column spans 7 days.
-  const renderCard = (c: CalendarCard, showDate = false) => {
-    const d = showDate ? parseDue(c.dueDate) : null;
+  // One chip, colour-coded by source (left border). Native items open the
+  // editor; external (Google) items open in Google and show a link glyph.
+  const renderItem = (it: DisplayItem, showDate = false) => {
+    const onClick = it.external
+      ? () => { if (it.href) window.open(it.href, '_blank', 'noopener,noreferrer'); }
+      : () => it.card && handleOpenCard(it.card);
     return (
-      <button key={c.id} onClick={() => handleOpenCard(c)} disabled={opening}
-        title={`${c.boardName}: ${c.title}${c.dueDone ? ' (done)' : ''}`}
+      <button key={it.key} onClick={onClick} disabled={!it.external && opening}
+        title={`${it.sourceName}: ${it.title}${it.done ? ' (done)' : ''}${it.external ? ' · Google (read-only)' : ''}`}
         className="w-full text-left text-[11px] leading-snug px-1.5 py-1 rounded bg-surface border border-edge hover:border-accent block"
-        style={{ borderLeft: `3px solid ${colorOf.get(c.boardId) ?? '#64748b'}` }}>
-        <span className={`block truncate ${c.dueDone ? 'line-through text-ink-faint' : 'text-ink'}`}>{c.title || '(untitled)'}</span>
-        {d && <span className="block text-[10px] text-ink-faint">{d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>}
+        style={{ borderLeft: `3px solid ${it.color}` }}>
+        <span className="flex items-center gap-1">
+          <span className={`flex-1 truncate ${it.done ? 'line-through text-ink-faint' : 'text-ink'}`}>{it.title || '(untitled)'}</span>
+          {it.external && <ExternalLink className="w-3 h-3 text-ink-faint shrink-0" />}
+        </span>
+        {showDate && it.date && (
+          <span className="block text-[10px] text-ink-faint">{it.date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+        )}
       </button>
     );
   };
@@ -204,18 +280,19 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
         </div>
       </div>
 
-      {/* Board filter chips */}
-      {boards.length > 0 && (
+      {/* Source filter chips (boards + Google calendars) */}
+      {sources.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap px-5 py-2 border-b border-edge shrink-0">
-          {boards.map((b) => {
-            const off = hidden.has(b.id);
+          {sources.map((s) => {
+            const off = hidden.has(s.id);
             return (
-              <button key={b.id} onClick={() => toggleBoard(b.id)}
+              <button key={s.id} onClick={() => toggleSource(s.id)}
                 className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border transition-colors ${
                   off ? 'border-edge text-ink-faint bg-transparent' : 'border-transparent text-ink bg-muted-bg'}`}
-                title={off ? `Show ${b.name}` : `Hide ${b.name}`}>
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: off ? 'transparent' : b.color, border: `1.5px solid ${b.color}` }} />
-                {b.name}
+                title={off ? `Show ${s.name}` : `Hide ${s.name}`}>
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: off ? 'transparent' : s.color, border: `1.5px solid ${s.color}` }} />
+                {s.name}
+                {s.external && <ExternalLink className="w-2.5 h-2.5 opacity-60" />}
               </button>
             );
           })}
@@ -231,7 +308,7 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
         ) : mode === 'weeks' ? (
           weekData.cols.length === 0 && weekData.noDate.length === 0 ? (
             <p className="text-center text-sm text-ink-muted py-12">
-              No dated cards yet. Give a card a due date on any board and it'll appear here.
+              No dated items yet. Give a card a due date on any board (or connect Google Calendar) and it'll appear here.
             </p>
           ) : (
             <div className="flex gap-2 h-full overflow-x-auto pb-2">
@@ -242,7 +319,7 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
                     <span className="text-xs text-ink-faint">{weekData.noDate.length}</span>
                   </div>
                   <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
-                    {weekData.noDate.map((c) => renderCard(c, true))}
+                    {weekData.noDate.map((it) => renderItem(it, true))}
                   </div>
                 </div>
               )}
@@ -251,11 +328,11 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
                   className={`flex flex-col w-64 shrink-0 rounded-lg border p-2 ${col.isThisWeek ? 'border-accent bg-accent/5' : 'border-edge bg-card'}`}>
                   <div className="flex items-baseline justify-between px-0.5 shrink-0">
                     <span className={`text-sm font-medium ${col.isThisWeek ? 'text-accent' : 'text-ink'}`}>{col.label}</span>
-                    <span className="text-xs text-ink-faint">{col.cards.length}</span>
+                    <span className="text-xs text-ink-faint">{col.items.length}</span>
                   </div>
                   <div className="text-[11px] text-ink-faint mb-2 px-0.5 shrink-0">{col.sub}</div>
                   <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
-                    {col.cards.map((c) => renderCard(c, true))}
+                    {col.items.map((it) => renderItem(it, true))}
                   </div>
                 </div>
               ))}
@@ -272,7 +349,7 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
               {days.map((date) => {
                 const inMonth = mode === 'week' || date.getMonth() === monthOfAnchor;
                 const isToday = date.getTime() === today.getTime();
-                const dayCards = byDay.get(dayKey(date)) ?? [];
+                const dayItems = byDay.get(dayKey(date)) ?? [];
                 return (
                   <div key={dayKey(date)}
                     className={`flex flex-col rounded-lg border p-1.5 ${mode === 'week' ? 'min-h-0' : 'min-h-[6.5rem]'} ${
@@ -282,15 +359,15 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
                       {date.getDate()}
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
-                      {dayCards.map((c) => renderCard(c))}
+                      {dayItems.map((it) => renderItem(it))}
                     </div>
                   </div>
                 );
               })}
             </div>
-            {boards.length === 0 && (
+            {sources.length === 0 && (
               <p className="text-center text-sm text-ink-muted py-12">
-                No dated cards yet. Give a card a due date on any board and it'll appear here.
+                No dated items yet. Give a card a due date on any board (or connect Google Calendar) and it'll appear here.
               </p>
             )}
           </>

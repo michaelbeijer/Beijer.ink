@@ -7,9 +7,16 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.26.0**
+Current Version: **0.27.0**
 
 ---
+
+## [0.27.0] — 2026-06-20
+
+### Added
+- **Google Calendar overlay — your jobs, personal and family events on the All Calendar, read-only.** Connect once in **Settings → Integrations → Google Calendar** (OAuth), then pick which of your Google calendars to show and give each a colour. Their events appear alongside your Beijer.ink cards in the **All Calendar** (Month / Week / **Weeks**), colour-coded by source, with the existing chip row now filtering **both** boards and Google calendars. External events are clearly marked (a link glyph), open in Google when clicked, and are **never written into your boards** — they're a live read-only layer. Calendars merge cleanly: a single OAuth connection surfaces every calendar on your account (including ones shared into it, like a partner's). [#2](https://github.com/michaelbeijer/Beijer.ink/issues/2)
+  - Requires `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` on the server; the section hides itself when they're absent.
+
 
 ## [0.26.0] — 2026-06-20
 

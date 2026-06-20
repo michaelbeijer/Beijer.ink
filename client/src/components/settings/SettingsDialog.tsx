@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ChangePasswordSection } from './ChangePasswordSection';
 import { DownloadBackupSection } from './DownloadBackupSection';
+import { GoogleCalendarSection } from './GoogleCalendarSection';
 import { useBoolSetting, SETTING_CALENDAR_DENSITY_STRIP } from '../../hooks/useAppSettings';
 
 interface SettingsDialogProps {
@@ -97,6 +98,14 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               checked={densityStrip}
               onChange={setDensityStrip}
             />
+          </section>
+
+          {/* Integrations section */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2 px-4">
+              Integrations
+            </h3>
+            <GoogleCalendarSection />
           </section>
 
           {/* Data section */}
