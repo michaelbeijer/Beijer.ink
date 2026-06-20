@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.25.0**
+Current Version: **0.26.0**
 
 ---
+
+## [0.26.0] — 2026-06-20
+
+### Added
+- **All Calendar gained a "Weeks" arrangement — a kanban-by-week across every board.** Alongside Month and Week, the app-level **All Calendar** now has a **Weeks** mode: one column per ISO week (plus a "No date" column), showing the dated cards from *all* boards side by side, colour-coded by board, with the existing show/hide board chips acting as a source filter. This is the unified weekly planner — your **To-do** board and **Weekly earnings** board now appear together, by week, without merging them. The current week is highlighted; each card shows its day. (Groundwork for the Google Calendar overlay, [#2](https://github.com/michaelbeijer/Beijer.ink/issues/2) — external calendars will slot in as additional colour-coded sources here.)
+
 
 ## [0.25.0] — 2026-06-20
 

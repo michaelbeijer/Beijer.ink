@@ -15,7 +15,7 @@ const BOARD_COLORS = [
   '#0ea5e9', '#84cc16', '#ef4444', '#eab308', '#14b8a6',
 ];
 
-type CalMode = 'month' | 'week';
+type CalMode = 'month' | 'week' | 'weeks';
 
 function dayKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
@@ -91,6 +91,40 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     return monthGrid(anchor).map((c) => c.date);
   }, [mode, anchor]);
 
+  // Weeks (kanban-by-week) arrangement: one column per ISO week that has
+  // cards, plus a "No date" column — your To-do, Earnings, and (later) Google
+  // items side by side, by week, across every board.
+  const weekData = useMemo(() => {
+    const empty = {
+      cols: [] as { key: string; label: string; sub: string; isThisWeek: boolean; cards: CalendarCard[] }[],
+      noDate: [] as CalendarCard[],
+    };
+    if (mode !== 'weeks') return empty;
+    const map = new Map<number, { start: Date; cards: CalendarCard[] }>();
+    const noDate: CalendarCard[] = [];
+    for (const c of cards) {
+      if (hidden.has(c.boardId)) continue;
+      const d = parseDue(c.dueDate);
+      if (!d) { noDate.push(c); continue; }
+      const ws = startOfWeek(d);
+      const key = ws.getTime();
+      let bucket = map.get(key);
+      if (!bucket) { bucket = { start: ws, cards: [] }; map.set(key, bucket); }
+      bucket.cards.push(c);
+    }
+    const thisWeek = startOfWeek(startOfDay(new Date())).getTime();
+    const cols = [...map.values()]
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      .map((w) => ({
+        key: String(w.start.getTime()),
+        label: `Week ${isoWeek(w.start)}`,
+        sub: weekRangeLabel(w.start),
+        isThisWeek: w.start.getTime() === thisWeek,
+        cards: w.cards.sort((a, b) => (a.dueDate ?? '').localeCompare(b.dueDate ?? '')),
+      }));
+    return { cols, noDate };
+  }, [mode, cards, hidden]);
+
   const monthOfAnchor = anchor.getMonth();
   const today = startOfDay(new Date());
 
@@ -110,6 +144,21 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
   }
 
+  // One card chip, colour-coded by its board (left border). `showDate` adds the
+  // day under the title — useful in the Weeks columns where a column spans 7 days.
+  const renderCard = (c: CalendarCard, showDate = false) => {
+    const d = showDate ? parseDue(c.dueDate) : null;
+    return (
+      <button key={c.id} onClick={() => handleOpenCard(c)} disabled={opening}
+        title={`${c.boardName}: ${c.title}${c.dueDone ? ' (done)' : ''}`}
+        className="w-full text-left text-[11px] leading-snug px-1.5 py-1 rounded bg-surface border border-edge hover:border-accent block"
+        style={{ borderLeft: `3px solid ${colorOf.get(c.boardId) ?? '#64748b'}` }}>
+        <span className={`block truncate ${c.dueDone ? 'line-through text-ink-faint' : 'text-ink'}`}>{c.title || '(untitled)'}</span>
+        {d && <span className="block text-[10px] text-ink-faint">{d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>}
+      </button>
+    );
+  };
+
   const periodLabel = mode === 'week'
     ? `${weekRangeLabel(anchor)} · Week ${isoWeek(anchor)}`
     : monthLabel(anchor);
@@ -128,20 +177,27 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
 
         <div className="flex-1" />
 
-        <button onClick={() => setAnchor(startOfDay(new Date()))}
-          className="px-2.5 py-1 text-sm text-ink-muted hover:text-ink hover:bg-hover rounded-md">Today</button>
-        <button onClick={() => shift(-1)} className="p-1 text-ink-muted hover:text-ink hover:bg-hover rounded-md" title="Previous">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="text-sm font-medium text-ink min-w-[10rem] text-center">{periodLabel}</span>
-        <button onClick={() => shift(1)} className="p-1 text-ink-muted hover:text-ink hover:bg-hover rounded-md" title="Next">
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        {/* Month/Week grids navigate by period; the Weeks arrangement shows
+            every week with content at once, so it has no period nav. */}
+        {mode !== 'weeks' && (
+          <>
+            <button onClick={() => setAnchor(startOfDay(new Date()))}
+              className="px-2.5 py-1 text-sm text-ink-muted hover:text-ink hover:bg-hover rounded-md">Today</button>
+            <button onClick={() => shift(-1)} className="p-1 text-ink-muted hover:text-ink hover:bg-hover rounded-md" title="Previous">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-medium text-ink min-w-[10rem] text-center">{periodLabel}</span>
+            <button onClick={() => shift(1)} className="p-1 text-ink-muted hover:text-ink hover:bg-hover rounded-md" title="Next">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </>
+        )}
 
         <div className="ml-2 flex rounded-md border border-edge overflow-hidden">
-          {(['month', 'week'] as CalMode[]).map((m) => (
+          {(['month', 'week', 'weeks'] as CalMode[]).map((m) => (
             <button key={m} onClick={() => setModePref(m)}
-              className={`px-2.5 py-1 text-sm capitalize ${mode === m ? 'bg-accent text-white' : 'text-ink-muted hover:bg-hover'}`}>
+              className={`px-2.5 py-1 text-sm capitalize ${mode === m ? 'bg-accent text-white' : 'text-ink-muted hover:bg-hover'}`}
+              title={m === 'weeks' ? 'Kanban-by-week across all boards' : `${m} view`}>
               {m}
             </button>
           ))}
@@ -172,6 +228,39 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
           <div className="h-full flex items-center justify-center text-ink-muted gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading calendar…
           </div>
+        ) : mode === 'weeks' ? (
+          weekData.cols.length === 0 && weekData.noDate.length === 0 ? (
+            <p className="text-center text-sm text-ink-muted py-12">
+              No dated cards yet. Give a card a due date on any board and it'll appear here.
+            </p>
+          ) : (
+            <div className="flex gap-2 h-full overflow-x-auto pb-2">
+              {weekData.noDate.length > 0 && (
+                <div className="flex flex-col w-64 shrink-0 rounded-lg border border-edge bg-card p-2">
+                  <div className="flex items-baseline justify-between mb-2 px-0.5 shrink-0">
+                    <span className="text-sm font-medium text-ink">No date</span>
+                    <span className="text-xs text-ink-faint">{weekData.noDate.length}</span>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
+                    {weekData.noDate.map((c) => renderCard(c, true))}
+                  </div>
+                </div>
+              )}
+              {weekData.cols.map((col) => (
+                <div key={col.key}
+                  className={`flex flex-col w-64 shrink-0 rounded-lg border p-2 ${col.isThisWeek ? 'border-accent bg-accent/5' : 'border-edge bg-card'}`}>
+                  <div className="flex items-baseline justify-between px-0.5 shrink-0">
+                    <span className={`text-sm font-medium ${col.isThisWeek ? 'text-accent' : 'text-ink'}`}>{col.label}</span>
+                    <span className="text-xs text-ink-faint">{col.cards.length}</span>
+                  </div>
+                  <div className="text-[11px] text-ink-faint mb-2 px-0.5 shrink-0">{col.sub}</div>
+                  <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
+                    {col.cards.map((c) => renderCard(c, true))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : (
           <>
             <div className="grid grid-cols-7 gap-1 mb-1">
@@ -193,14 +282,7 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
                       {date.getDate()}
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
-                      {dayCards.map((c) => (
-                        <button key={c.id} onClick={() => handleOpenCard(c)} disabled={opening}
-                          title={`${c.boardName}: ${c.title}${c.dueDone ? ' (done)' : ''}`}
-                          className="text-left text-[11px] leading-snug px-1.5 py-1 rounded bg-surface border border-edge hover:border-accent flex items-start gap-1.5"
-                          style={{ borderLeft: `3px solid ${colorOf.get(c.boardId) ?? '#64748b'}` }}>
-                          <span className={`flex-1 truncate ${c.dueDone ? 'line-through text-ink-faint' : 'text-ink'}`}>{c.title || '(untitled)'}</span>
-                        </button>
-                      ))}
+                      {dayCards.map((c) => renderCard(c))}
                     </div>
                   </div>
                 );
