@@ -22,6 +22,7 @@
     "@tiptap/extension-table-row": "^3.21.0",
     "@tiptap/extension-task-item": "^3.21.0",
     "@tiptap/extension-task-list": "^3.21.0",
+    "@tiptap/extension-text-style": "^3.27.1",
     "@tiptap/extension-underline": "^3.21.0",
     "@tiptap/react": "^3.21.0",
     "@tiptap/starter-kit": "^3.21.0",

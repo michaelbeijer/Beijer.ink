@@ -10,6 +10,7 @@ import { Placeholder } from '@tiptap/extension-placeholder';
 import { Underline } from '@tiptap/extension-underline';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
+import { TextStyle, Color, FontFamily } from '@tiptap/extension-text-style';
 import { SearchHighlight, getSearchPluginKey } from '../editor/tiptapSearchHighlight';
 import type { SearchHighlightState } from '../editor/tiptapSearchHighlight';
 import { FirstLineHeading } from '../editor/firstLineHeading';
@@ -43,6 +44,9 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       Underline,
       TaskList,
       TaskItem.configure({ nested: true }),
+      TextStyle,
+      Color,
+      FontFamily,
       SearchHighlight,
       FirstLineHeading,
     ],

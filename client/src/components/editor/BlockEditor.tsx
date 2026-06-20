@@ -10,6 +10,7 @@ import { Placeholder } from '@tiptap/extension-placeholder';
 import { Underline } from '@tiptap/extension-underline';
 import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
+import { TextStyle, Color, FontFamily } from '@tiptap/extension-text-style';
 import type { Editor } from '@tiptap/react';
 import { splitBlocks, joinBlocks, type Block } from '../../utils/blockParser';
 import { SearchHighlight, getSearchPluginKey } from '../../editor/tiptapSearchHighlight';
@@ -94,6 +95,9 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
       Underline,
       TaskList,
       TaskItem.configure({ nested: true }),
+      TextStyle,
+      Color,
+      FontFamily,
       SearchHighlight,
       blockNavExtension,
     ],
