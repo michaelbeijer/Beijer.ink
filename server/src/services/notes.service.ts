@@ -93,7 +93,6 @@ export async function updateNote(
   id: string,
   data: {
     content?: string;
-    title?: string;
     notebookId?: string;
     isPinned?: boolean;
     isFavorite?: boolean;
@@ -104,22 +103,8 @@ export async function updateNote(
 ) {
   const updateData: Record<string, unknown> = { ...data };
 
-  if (data.title !== undefined) {
-    // Explicit title from the user. Non-empty → pin it; empty → unpin and fall
-    // back to deriving from the (new or stored) content.
-    const t = data.title.trim();
-    if (t) {
-      updateData.title = t;
-      updateData.titleManual = true;
-    } else {
-      updateData.titleManual = false;
-      const content = data.content ?? (await prisma.note.findUnique({ where: { id }, select: { content: true } }))?.content ?? '';
-      updateData.title = extractTitle(content);
-    }
-  } else if (data.content !== undefined) {
-    // Re-derive from the first line only if the title isn't pinned.
-    const note = await prisma.note.findUnique({ where: { id }, select: { titleManual: true } });
-    if (!note?.titleManual) updateData.title = extractTitle(data.content);
+  if (data.content !== undefined) {
+    updateData.title = extractTitle(data.content);
   }
 
   return prisma.note.update({

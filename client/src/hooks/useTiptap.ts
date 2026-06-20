@@ -12,6 +12,7 @@ import { TaskList } from '@tiptap/extension-task-list';
 import { TaskItem } from '@tiptap/extension-task-item';
 import { SearchHighlight, getSearchPluginKey } from '../editor/tiptapSearchHighlight';
 import type { SearchHighlightState } from '../editor/tiptapSearchHighlight';
+import { FirstLineHeading } from '../editor/firstLineHeading';
 
 const DEBOUNCE_MS = 300;
 
@@ -43,6 +44,7 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       TaskList,
       TaskItem.configure({ nested: true }),
       SearchHighlight,
+      FirstLineHeading,
     ],
     // Prevent React re-renders on every transaction (cursor move, selection, etc.)
     // This is critical for large documents — without it, React re-renders the

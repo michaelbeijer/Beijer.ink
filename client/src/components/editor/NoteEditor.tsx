@@ -36,7 +36,6 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   const saveRef = useRef(save);
   saveRef.current = save;
   const [charCount, setCharCount] = useState(0);
-  const titleManualRef = useRef(false);
   const [showToolbar, setShowToolbar] = useState(() => {
     const stored = localStorage.getItem(TOOLBAR_KEY);
     return stored === null ? true : stored === 'true';
@@ -67,9 +66,7 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
           { queryKey: ['notes'] },
           (old) =>
             old?.map((n) =>
-              n.id === noteId
-                ? { ...n, content: html, ...(titleManualRef.current ? {} : { title: firstLine }) }
-                : n
+              n.id === noteId ? { ...n, title: firstLine, content: html } : n
             )
         );
         saveRef.current(html);
@@ -91,7 +88,6 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
     queryKey: ['note', noteId],
     queryFn: () => getNoteById(noteId),
   });
-  titleManualRef.current = !!note?.titleManual;
 
   const isLargeNote = (note?.content?.length ?? 0) >= BLOCK_MODE_THRESHOLD;
 
@@ -154,6 +150,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
   useEffect(() => {
     if (note && editor && !isLargeNote) {
       isLoadingRef.current = true;
+      // Auto-title only for published writing: the first line becomes the H1.
+      const flh = (editor.storage as unknown as Record<string, { enabled: boolean }>).firstLineHeading;
+      if (flh) flh.enabled = !!note.notebook?.publishTarget;
       // Yield to browser so toolbar/chrome paints before heavy content parsing
       const id = requestAnimationFrame(() => {
         setContent(note.content || '');
