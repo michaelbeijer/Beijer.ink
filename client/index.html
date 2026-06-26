@@ -14,6 +14,17 @@
       href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Permanent+Marker&family=Special+Elite&display=swap"
     />
     <title>Beijer.ink</title>
+    <!-- Apply the saved Text size before paint to avoid a reflow flash.
+         Keep these values in sync with fontScaleValues in FontScaleContext.tsx. -->
+    <script>
+      (function () {
+        try {
+          var sizes = { default: '100%', large: '112.5%', larger: '125%' };
+          var saved = localStorage.getItem('beijer-ink-font-scale');
+          if (saved && sizes[saved]) document.documentElement.style.fontSize = sizes[saved];
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

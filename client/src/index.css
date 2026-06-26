@@ -271,11 +271,11 @@
   --t-section-label: #3bce5a;
 }
 
-/* Mobile adjustments */
+/* Mobile adjustments. rem (not px) so the Text size setting scales it too. */
 @media (max-width: 767px) {
   .tiptap-editor .ProseMirror,
   .tiptap-content {
-    font-size: 16px;
+    font-size: 1rem;
   }
 }
 
@@ -304,7 +304,7 @@
   caret-color: var(--t-caret);
   line-height: 1.7;
   color: var(--t-ink);
-  font-size: 15px;
+  font-size: 0.9375rem; /* 15px at default; rem so the Text size setting scales it */
   outline: none;
   min-height: 100%;
 }
@@ -534,7 +534,7 @@
 .tiptap-content {
   line-height: 1.7;
   color: var(--t-ink);
-  font-size: 15px;
+  font-size: 0.9375rem; /* 15px at default; rem so the Text size setting scales it */
 }
 
 .block-editor-active .ProseMirror {

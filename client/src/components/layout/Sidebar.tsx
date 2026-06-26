@@ -8,6 +8,7 @@ import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boar
 import type { BoardType } from '../../types/board';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemePicker } from './ThemePicker';
+import { TextSizePicker } from './TextSizePicker';
 import { flattenNotebookTree } from '../../utils/flattenNotebookTree';
 import { useNotebookNotes } from '../../hooks/useNotebookNotes';
 import { useTreeKeyboardNav } from '../../hooks/useTreeKeyboardNav';
@@ -721,6 +722,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
       {/* Footer */}
       <div className="border-t border-edge p-1.5">
         <ThemePicker />
+        <TextSizePicker />
         <button
           onClick={onOpenSettings}
           className="flex items-center gap-2 w-full px-2.5 py-1.5 text-sm text-ink-muted hover:text-ink hover:bg-hover rounded-md transition-colors"

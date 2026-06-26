@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { FontScaleProvider } from './contexts/FontScaleContext';
 import { LoginPage } from './components/auth/LoginPage';
 import { ForgotPasswordPage } from './components/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
@@ -72,13 +73,15 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
+      <FontScaleProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </FontScaleProvider>
     </ThemeProvider>
   );
 }
