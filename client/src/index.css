@@ -497,6 +497,32 @@
   margin: 1.5em 0;
 }
 
+/* ── Wide editor canvas ──
+   The editor fills the available width so tables can use the whole pane,
+   while running text stays at a comfortable reading measure (centred).
+   Tables therefore spread into what used to be blank left/right gutters. */
+.editor-canvas {
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: 16px 32px;
+}
+
+.tiptap-editor .ProseMirror > p,
+.tiptap-editor .ProseMirror > h1,
+.tiptap-editor .ProseMirror > h2,
+.tiptap-editor .ProseMirror > h3,
+.tiptap-editor .ProseMirror > h4,
+.tiptap-editor .ProseMirror > h5,
+.tiptap-editor .ProseMirror > h6,
+.tiptap-editor .ProseMirror > ul,
+.tiptap-editor .ProseMirror > ol,
+.tiptap-editor .ProseMirror > blockquote,
+.tiptap-editor .ProseMirror > pre,
+.tiptap-editor .ProseMirror > hr {
+  max-width: 850px;
+  margin-inline: auto;
+}
+
 .tiptap-editor .ProseMirror table,
 .tiptap-content table {
   border-collapse: collapse;

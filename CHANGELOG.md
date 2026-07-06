@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.1**
+Current Version: **0.27.2**
 
 ---
+
+## [0.27.2] – 2026-07-06
+
+### Changed
+- **Wide editor canvas so tables can use the whole pane.** The note editor was capped at 850px and centred, leaving blank gutters that tables could not spread into. The editor now fills the available width (up to 1400px), while running text (paragraphs, headings, lists) stays at a comfortable ~850px reading measure, centred. Tables spread into the former gutters, and their columns remain individually resizable by dragging the border between them.
+
 
 ## [0.27.1] – 2026-07-06
 
