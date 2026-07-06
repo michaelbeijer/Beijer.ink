@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.3**
+Current Version: **0.27.4**
 
 ---
+
+## [0.27.4] – 2026-07-06
+
+### Added
+- **Collapsible sidebar sections.** The **Favourites**, **Folders**, **Notes** and **Boards** section headings in the left sidebar are now clickable: click a heading (or its chevron) to fold the whole section away, click again to expand it. Which sections are collapsed is remembered across reloads.
+
 
 ## [0.27.3] – 2026-07-06
 

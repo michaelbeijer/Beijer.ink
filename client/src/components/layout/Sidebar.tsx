@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, CalendarDays, CheckSquare, LogOut, Settings, Github, Star, Trash2 } from 'lucide-react';
+import { PenLine, FolderPlus, FilePlus, LayoutGrid, CalendarRange, CalendarDays, CheckSquare, LogOut, Settings, Github, Star, Trash2, ChevronDown } from 'lucide-react';
 import { getNotebooks, createNotebook, deleteNotebook, updateNotebook } from '../../api/notebooks';
 import { getRootNotes, getFavoriteNotes, createNote, deleteNote, moveNote, updateNote } from '../../api/notes';
 import { getBoards, createBoard, deleteBoard, updateBoard } from '../../api/boards';
@@ -42,6 +42,26 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
   const [editName, setEditName] = useState('');
   const [contextMenuId, setContextMenuId] = useState<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
+
+  // Collapsible sidebar sections (Favourites / Folders / Notes / Boards), remembered across reloads.
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('beijer-ink-collapsed-sections');
+      if (stored) return new Set(JSON.parse(stored) as string[]);
+    } catch { /* ignore */ }
+    return new Set();
+  });
+  const toggleSection = useCallback((key: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem('beijer-ink-collapsed-sections', JSON.stringify([...next]));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const { data: notebooks = [] } = useQuery({
     queryKey: ['notebooks'],
@@ -405,6 +425,27 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     data: { type: 'root-drop' },
   });
 
+  // A collapsible section header: chevron + label, toggles the section's visibility.
+  const renderSectionHeader = (key: string, label: string, extra = '') => {
+    const collapsed = collapsedSections.has(key);
+    return (
+      <button
+        type="button"
+        tabIndex={-1}
+        onClick={() => toggleSection(key)}
+        aria-expanded={!collapsed}
+        className={`flex items-center gap-1 w-full mb-1 px-2 py-0.5 rounded hover:bg-hover ${extra}`}
+      >
+        <ChevronDown
+          className={`w-3 h-3 shrink-0 text-fav-text transition-transform ${collapsed ? '-rotate-90' : ''}`}
+        />
+        <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
+          {label}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col bg-panel">
       {/* Header */}
@@ -496,11 +537,9 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         {/* Favourites section */}
         {hasFavourites && (
           <>
-            <div className="mb-1 px-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
-                Favourites
-              </span>
-            </div>
+            {renderSectionHeader('favourites', 'Favourites')}
+            {!collapsedSections.has('favourites') && (
+            <>
             {favoriteNotebooks.map((nb) => (
               <SidebarFavoriteItem
                 key={`fav-nb-${nb.id}`}
@@ -556,19 +595,15 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
                 </button>
               </div>
             ))}
+            </>
+            )}
             <div className="my-1.5" />
           </>
         )}
 
-        {flatNodes.length > 0 && (
-          <div className="mb-1 px-2">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
-              Folders
-            </span>
-          </div>
-        )}
+        {flatNodes.length > 0 && renderSectionHeader('folders', 'Folders')}
 
-        {flatNodes.map((node, i) => {
+        {!collapsedSections.has('folders') && flatNodes.map((node, i) => {
           if (node.type === 'note') {
             return (
               <SidebarNoteNode
@@ -651,12 +686,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         {/* Root notes */}
         {rootNotes.length > 0 && (
           <>
-            <div className="mt-2 mb-1 px-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
-                Notes
-              </span>
-            </div>
-            {rootNotes.map((note) => (
+            {renderSectionHeader('notes', 'Notes', 'mt-2')}
+            {!collapsedSections.has('notes') && rootNotes.map((note) => (
               <SidebarRootNote
                 key={note.id}
                 note={note}
@@ -676,12 +707,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         {/* Boards */}
         {boards.length > 0 && (
           <>
-            <div className="mt-2 mb-1 px-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
-                Boards
-              </span>
-            </div>
-            {boards.map((board) => (
+            {renderSectionHeader('boards', 'Boards', 'mt-2')}
+            {!collapsedSections.has('boards') && boards.map((board) => (
               <div
                 key={`board-${board.id}`}
                 onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
