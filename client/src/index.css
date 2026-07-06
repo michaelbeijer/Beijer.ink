@@ -277,6 +277,31 @@
   .tiptap-content {
     font-size: 1rem;
   }
+
+  /* Trim the generous side padding so tables (and text) get more usable
+     width on a narrow phone screen. */
+  .editor-canvas {
+    padding: 12px 12px;
+  }
+  .tiptap-editor .ProseMirror {
+    padding: 16px 12px;
+  }
+
+  /* On a phone the table of contents must not steal the editor's width as a
+     fixed 200px column — float it over the editor as a dismissible drawer
+     (tap "Hide contents" in the ⋯ menu to close). The parent is position:
+     relative, so this anchors to the editor area. */
+  .toc-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 70%;
+    max-width: 240px;
+    background: var(--t-panel);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+  }
 }
 
 /* ── Scrollbar ── */

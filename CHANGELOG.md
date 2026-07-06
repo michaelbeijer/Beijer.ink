@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.5**
+Current Version: **0.27.6**
 
 ---
+
+## [0.27.6] – 2026-07-06
+
+### Fixed
+- **Mobile: the table of contents no longer squashes the editor.** On a phone the contents panel was a fixed 200px column stealing most of the screen, leaving notes (especially wide tables) crammed into a thin strip. It now floats over the editor as a dismissible drawer, so the note keeps the full width. Editor side-padding was also trimmed on mobile so tables get more usable room.
+
 
 ## [0.27.5] – 2026-07-06
 
