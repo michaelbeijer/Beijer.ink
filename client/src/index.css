@@ -527,12 +527,16 @@
 .tiptap-content table {
   border-collapse: collapse;
   table-layout: fixed;
-  /* Always fill the pane. Tiptap writes an inline pixel width onto the table
-     once columns are resized (the sum of the columns); !important overrides
-     that so the table can never get stuck narrow — it stays full-width and a
-     column drag redistributes width between columns instead. */
-  width: 100% !important;
   margin: 0.75em 0;
+}
+
+/* Tables fill the pane by default. A table toggled to natural width carries
+   data-full-width="false" and is left at the width its columns imply, so it no
+   longer stretches edge to edge. !important overrides the inline pixel width
+   Tiptap writes onto full-width tables once their columns are resized. */
+.tiptap-editor .ProseMirror table:not([data-full-width="false"]),
+.tiptap-content table:not([data-full-width="false"]) {
+  width: 100% !important;
 }
 
 .tiptap-editor .ProseMirror th,

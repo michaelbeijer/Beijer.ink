@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
@@ -14,6 +13,7 @@ import { TextStyle, Color, FontFamily } from '@tiptap/extension-text-style';
 import type { Editor } from '@tiptap/react';
 import { splitBlocks, joinBlocks, type Block } from '../../utils/blockParser';
 import { SearchHighlight, getSearchPluginKey } from '../../editor/tiptapSearchHighlight';
+import { ResizableTable } from '../../editor/resizableTable';
 
 const DEBOUNCE_MS = 300;
 const LARGE_BLOCK_THRESHOLD = 20_000; // Skip per-keystroke serialization for blocks over 20KB
@@ -86,7 +86,7 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
       }),
-      Table.configure({ resizable: true }),
+      ResizableTable,
       TableRow,
       TableCell,
       TableHeader,

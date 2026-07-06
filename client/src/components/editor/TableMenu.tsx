@@ -10,6 +10,8 @@ import {
   ToggleRight,
   Rows3,
   Columns3,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 
@@ -80,6 +82,30 @@ export function TableMenu({ editor }: TableMenuProps) {
     setOpen(false);
   };
 
+  // Find the ancestor <table> node of the current selection (attrs + position).
+  const findTable = (e: Editor): { pos: number; node: import('@tiptap/pm/model').Node } | null => {
+    const { $from } = e.state.selection;
+    for (let d = $from.depth; d > 0; d -= 1) {
+      const node = $from.node(d);
+      if (node.type.name === 'table') return { pos: $from.before(d), node };
+    }
+    return null;
+  };
+
+  const tableIsFullWidth = (() => {
+    const found = findTable(editor);
+    return found ? found.node.attrs.fullWidth !== false : true;
+  })();
+
+  const toggleFullWidth = (e: Editor) => {
+    const found = findTable(e);
+    if (!found) return;
+    const next = found.node.attrs.fullWidth === false ? null : false;
+    e.view.dispatch(
+      e.state.tr.setNodeMarkup(found.pos, undefined, { ...found.node.attrs, fullWidth: next })
+    );
+  };
+
   return (
     <div
       ref={menuRef}
@@ -125,6 +151,16 @@ export function TableMenu({ editor }: TableMenuProps) {
           <Split className="w-3.5 h-3.5" /> Split cell
         </button>
       </div>
+
+      <div className="table-context-menu-separator" />
+
+      <button className="table-context-menu-item" onClick={() => run(toggleFullWidth)}>
+        {tableIsFullWidth ? (
+          <><Minimize2 className="w-3.5 h-3.5" /> Fit table to content</>
+        ) : (
+          <><Maximize2 className="w-3.5 h-3.5" /> Stretch table to full width</>
+        )}
+      </button>
 
       <div className="table-context-menu-separator" />
 

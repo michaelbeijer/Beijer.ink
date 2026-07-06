@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.4**
+Current Version: **0.27.5**
 
 ---
+
+## [0.27.5] – 2026-07-06
+
+### Added
+- **Per-table full-width toggle.** Tables still fill the pane by default, but you can now right-click a table and choose **"Fit table to content"** to stop it stretching edge to edge (and **"Stretch table to full width"** to put it back). Handy for small two- or three-column tables that shouldn't span the whole page. The choice is saved per table with the note.
+
 
 ## [0.27.4] – 2026-07-06
 
