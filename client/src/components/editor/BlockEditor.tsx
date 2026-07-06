@@ -2,8 +2,6 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TableRow } from '@tiptap/extension-table-row';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { TableHeader } from '@tiptap/extension-table-header';
 import { Link } from '@tiptap/extension-link';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { Underline } from '@tiptap/extension-underline';
@@ -14,6 +12,7 @@ import type { Editor } from '@tiptap/react';
 import { splitBlocks, joinBlocks, type Block } from '../../utils/blockParser';
 import { SearchHighlight, getSearchPluginKey } from '../../editor/tiptapSearchHighlight';
 import { ResizableTable } from '../../editor/resizableTable';
+import { TableCellWithBackground, TableHeaderWithBackground } from '../../editor/tableCellBackground';
 
 const DEBOUNCE_MS = 300;
 const LARGE_BLOCK_THRESHOLD = 20_000; // Skip per-keystroke serialization for blocks over 20KB
@@ -88,8 +87,8 @@ export function BlockEditor({ content, onChange, onEditorReady, onActivateBlockR
       }),
       ResizableTable,
       TableRow,
-      TableCell,
-      TableHeader,
+      TableCellWithBackground,
+      TableHeaderWithBackground,
       Link.configure({ openOnClick: false, autolink: false }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       Underline,

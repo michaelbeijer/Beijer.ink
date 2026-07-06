@@ -19,6 +19,23 @@ interface TableMenuProps {
   editor: Editor | null;
 }
 
+// Curated cell-background palette (Evernote-style). Fixed colours rather than
+// theme tokens, so a highlighted cell reads the same under any theme.
+const CELL_COLORS: { label: string; value: string }[] = [
+  { label: 'Light grey', value: '#eef2f6' },
+  { label: 'Grey', value: '#dbe2ea' },
+  { label: 'Lavender', value: '#e9d5ff' },
+  { label: 'Pink', value: '#fbcfe8' },
+  { label: 'Rose', value: '#fecdd3' },
+  { label: 'Peach', value: '#fed7aa' },
+  { label: 'Yellow', value: '#fef08a' },
+  { label: 'Green', value: '#c5f2cf' },
+  { label: 'Teal', value: '#99f6e4' },
+  { label: 'Sky', value: '#bae6fd' },
+  { label: 'Blue', value: '#bfdbfe' },
+  { label: 'Indigo', value: '#c7d2fe' },
+];
+
 export function TableMenu({ editor }: TableMenuProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -150,6 +167,30 @@ export function TableMenu({ editor }: TableMenuProps) {
         <button className="table-context-menu-item" onClick={() => run((e) => e.chain().focus().splitCell().run())}>
           <Split className="w-3.5 h-3.5" /> Split cell
         </button>
+      </div>
+
+      <div className="table-context-menu-separator" />
+
+      <div className="table-context-menu-group">
+        <div className="table-context-menu-label">Cell background</div>
+        <div className="table-swatches">
+          <button
+            type="button"
+            className="table-swatch table-swatch-clear"
+            title="No fill"
+            onClick={() => run((e) => e.chain().focus().setCellAttribute('backgroundColor', null).run())}
+          />
+          {CELL_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              className="table-swatch"
+              style={{ backgroundColor: c.value }}
+              title={c.label}
+              onClick={() => run((e) => e.chain().focus().setCellAttribute('backgroundColor', c.value).run())}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="table-context-menu-separator" />

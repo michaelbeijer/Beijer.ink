@@ -2,8 +2,6 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TableRow } from '@tiptap/extension-table-row';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { TableHeader } from '@tiptap/extension-table-header';
 import { Link } from '@tiptap/extension-link';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { Underline } from '@tiptap/extension-underline';
@@ -14,6 +12,7 @@ import { SearchHighlight, getSearchPluginKey } from '../editor/tiptapSearchHighl
 import type { SearchHighlightState } from '../editor/tiptapSearchHighlight';
 import { FirstLineHeading } from '../editor/firstLineHeading';
 import { ResizableTable } from '../editor/resizableTable';
+import { TableCellWithBackground, TableHeaderWithBackground } from '../editor/tableCellBackground';
 
 const DEBOUNCE_MS = 300;
 
@@ -37,8 +36,8 @@ export function useTiptap({ onChange, placeholder }: UseTiptapOptions) {
       }),
       ResizableTable,
       TableRow,
-      TableCell,
-      TableHeader,
+      TableCellWithBackground,
+      TableHeaderWithBackground,
       Link.configure({ openOnClick: false, autolink: false }),
       Placeholder.configure({ placeholder: placeholder ?? '' }),
       Underline,

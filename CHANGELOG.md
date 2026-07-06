@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.6**
+Current Version: **0.27.7**
 
 ---
+
+## [0.27.7] – 2026-07-06
+
+### Added
+- **Cell background colours.** Right-click inside a table and pick a colour from the new **Cell background** palette to highlight a cell (or select several cells first to colour them all at once), like Evernote. Choose the crossed-out swatch to clear a cell back to no fill. Colours are saved with the note and shown in the read-only view.
+
 
 ## [0.27.6] – 2026-07-06
 

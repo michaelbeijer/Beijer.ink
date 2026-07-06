@@ -652,7 +652,7 @@
 .table-context-menu {
   position: fixed;
   z-index: 50;
-  min-width: 180px;
+  min-width: 196px;
   background: var(--t-card);
   border: 1px solid var(--t-border);
   border-radius: 8px;
@@ -694,4 +694,54 @@
 .table-context-menu-group {
   display: flex;
   flex-direction: column;
+}
+
+.table-context-menu-label {
+  padding: 4px 10px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--t-ink-faint);
+}
+
+.table-swatches {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  padding: 4px 10px 6px;
+}
+
+.table-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--t-border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.08s;
+}
+
+.table-swatch:hover {
+  transform: scale(1.15);
+}
+
+.table-swatch-clear {
+  background: var(--t-card);
+  position: relative;
+}
+
+/* Diagonal red slash to signal "no fill" / clear. */
+.table-swatch-clear::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.75px),
+    var(--t-danger) calc(50% - 0.75px),
+    var(--t-danger) calc(50% + 0.75px),
+    transparent calc(50% + 0.75px)
+  );
 }
