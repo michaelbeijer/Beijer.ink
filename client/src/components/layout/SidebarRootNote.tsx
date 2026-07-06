@@ -61,7 +61,7 @@ export function SidebarRootNote({
       className={`group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
         isSelected
           ? 'bg-active text-ink'
-          : 'text-ink-secondary hover:bg-hover'
+          : 'text-ink hover:bg-hover'
       } ${isDragging ? 'opacity-50' : ''}`}
       style={{ paddingLeft: '8px' }}
       onClick={() => onSelect(note.id)}
@@ -69,7 +69,7 @@ export function SidebarRootNote({
     >
       <FileText className="w-4 h-4 shrink-0 text-ink-faint" />
       {note.isPinned && <Pin className="w-3 h-3 shrink-0 text-amber-400 -rotate-45" />}
-      <span className="flex-1 text-sm truncate">{note.title}</span>
+      <span className="flex-1 text-sm font-medium truncate">{note.title}</span>
 
       <div className="relative">
         <button

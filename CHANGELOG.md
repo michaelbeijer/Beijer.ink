@@ -7,9 +7,18 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.0**
+Current Version: **0.27.1**
 
 ---
+
+## [0.27.1] – 2026-07-06
+
+### Fixed
+- **Table columns are now resizable.** The editor already had column resizing wired up, but the table CSS was missing `table-layout: fixed`, so the browser ignored the stored widths and dragging did nothing. Hover the border between two columns and drag to resize; widths are saved with the note and shown in the read-only view too.
+
+### Changed
+- **Clearer sidebar.** Notebook, favourite and top-level note names in the left sidebar now use full-contrast text at a medium weight (previously a muted secondary tone), making the folder list easier to scan.
+
 
 ## [0.27.0] — 2026-06-20
 

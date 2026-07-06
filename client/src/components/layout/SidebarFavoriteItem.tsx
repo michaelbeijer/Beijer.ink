@@ -41,7 +41,7 @@ export function SidebarFavoriteItem({
       className={`group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
         isSelected
           ? 'bg-active text-ink'
-          : 'text-ink-secondary hover:bg-hover'
+          : 'text-ink hover:bg-hover'
       }`}
       style={{ paddingLeft: '8px' }}
       onClick={onSelect}
@@ -52,7 +52,7 @@ export function SidebarFavoriteItem({
       ) : (
         <FileText className="w-4 h-4 shrink-0 text-ink-faint" />
       )}
-      <span className="flex-1 text-sm truncate">{name}</span>
+      <span className="flex-1 text-sm font-medium truncate">{name}</span>
 
       <div className="relative">
         <button
