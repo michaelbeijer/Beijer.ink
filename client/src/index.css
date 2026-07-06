@@ -502,9 +502,9 @@
    while running text stays at a comfortable reading measure (centred).
    Tables therefore spread into what used to be blank left/right gutters. */
 .editor-canvas {
-  max-width: 1400px;
+  max-width: 1600px;
   margin-inline: auto;
-  padding: 16px 32px;
+  padding: 16px 40px;
 }
 
 .tiptap-editor .ProseMirror > p,
@@ -527,7 +527,11 @@
 .tiptap-content table {
   border-collapse: collapse;
   table-layout: fixed;
-  width: 100%;
+  /* Always fill the pane. Tiptap writes an inline pixel width onto the table
+     once columns are resized (the sum of the columns); !important overrides
+     that so the table can never get stuck narrow — it stays full-width and a
+     column drag redistributes width between columns instead. */
+  width: 100% !important;
   margin: 0.75em 0;
 }
 

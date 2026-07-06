@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.2**
+Current Version: **0.27.3**
 
 ---
+
+## [0.27.3] – 2026-07-06
+
+### Fixed
+- **Tables now always fill the full width of the pane.** Previously, once you had resized any columns, Tiptap wrote a fixed pixel width onto the table (the sum of the columns), which overrode the full-width styling and left the table stranded with blank space on either side. Tables now always stretch to fill the available width; dragging a column border redistributes width between columns while the table stays full-width. The editor canvas cap was also raised (1400px → 1600px) with a little more side padding so wide monitors get more usable room.
+
 
 ## [0.27.2] – 2026-07-06
 
