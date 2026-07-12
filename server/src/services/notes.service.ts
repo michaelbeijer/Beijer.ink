@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 
 function extractTitle(content: string): string {
@@ -68,7 +69,7 @@ export async function getNoteById(id: string) {
   return prisma.note.findUnique({
     where: { id },
     include: {
-      notebook: { select: { id: true, name: true, publishTarget: true } },
+      notebook: { select: { id: true, name: true, publishTarget: true, publishBeijerterm: true } },
     },
   });
 }
@@ -99,12 +100,18 @@ export async function updateNote(
     sortOrder?: number;
     subtitle?: string | null;
     slug?: string | null;
+    metadata?: { headword?: string; aliases?: string[]; lang?: string; domain?: string } | null;
   }
 ) {
-  const updateData: Record<string, unknown> = { ...data };
+  const { metadata, ...rest } = data;
+  const updateData: Record<string, unknown> = { ...rest };
 
   if (data.content !== undefined) {
     updateData.title = extractTitle(data.content);
+  }
+  // Nullable Json: Prisma needs Prisma.DbNull (not plain null) to clear it.
+  if (metadata !== undefined) {
+    updateData.metadata = metadata === null ? Prisma.DbNull : metadata;
   }
 
   return prisma.note.update({

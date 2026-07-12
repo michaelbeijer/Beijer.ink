@@ -174,6 +174,16 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
     },
   });
 
+  // Flag a notebook as the beijerterm.com article publish source.
+  const toggleNotebookPublishBeijertermMutation = useMutation({
+    mutationFn: ({ id, publishBeijerterm }: { id: string; publishBeijerterm: boolean }) =>
+      updateNotebook(id, { publishBeijerterm }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notebooks'] });
+      queryClient.invalidateQueries({ queryKey: ['note'] }); // open note refetches → Beijerterm panel toggles
+    },
+  });
+
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -325,6 +335,11 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
 
   function handleToggleNotebookPublish(id: string, currentState: boolean) {
     toggleNotebookPublishMutation.mutate({ id, publishTarget: !currentState });
+    setContextMenuId(null);
+  }
+
+  function handleToggleNotebookPublishBeijerterm(id: string, currentState: boolean) {
+    toggleNotebookPublishBeijertermMutation.mutate({ id, publishBeijerterm: !currentState });
     setContextMenuId(null);
   }
 
@@ -652,6 +667,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
               onCreateNote={handleCreateNoteInNotebook}
               onToggleFavorite={handleToggleNotebookFavorite}
               onTogglePublish={handleToggleNotebookPublish}
+              onTogglePublishBeijerterm={handleToggleNotebookPublishBeijerterm}
               onClose={onClose}
             />
           );

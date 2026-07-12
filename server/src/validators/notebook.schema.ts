@@ -13,4 +13,5 @@ export const updateNotebookSchema = z.object({
   sortOrder: z.number().int().optional(),
   isFavorite: z.boolean().optional(),
   publishTarget: z.boolean().optional(),
+  publishBeijerterm: z.boolean().optional(),
 });

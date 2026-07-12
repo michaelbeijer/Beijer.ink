@@ -39,6 +39,10 @@ model Notebook {
   isFavorite Boolean    @default(false) @map("is_favorite")
   // When true, every note in this notebook is published to autofingers.com.
   publishTarget Boolean @default(false) @map("publish_target")
+  // When true, every note in this notebook is published to beijerterm.com as a
+  // terminology article. Independent of publishTarget — a notebook can target
+  // either, both, or neither.
+  publishBeijerterm Boolean @default(false) @map("publish_beijerterm")
   parent     Notebook?  @relation("NotebookTree", fields: [parentId], references: [id], onDelete: Cascade)
   children   Notebook[] @relation("NotebookTree")
   notes      Note[]
@@ -59,6 +63,11 @@ model Note {
   // Only meaningful for notes in a publishTarget notebook; null otherwise.
   subtitle   String?
   slug       String?
+  // beijerterm.com article metadata: { headword, aliases: string[], lang }.
+  // headword + aliases are the search terms that surface this article on
+  // beijerterm.com; lang is the article's language (ISO 639-1). Only meaningful
+  // for notes in a publishBeijerterm notebook. Null for ordinary notes.
+  metadata   Json?
   notebookId String?   @map("notebook_id")
   notebook   Notebook? @relation(fields: [notebookId], references: [id], onDelete: Cascade)
   isPinned   Boolean   @default(false) @map("is_pinned")

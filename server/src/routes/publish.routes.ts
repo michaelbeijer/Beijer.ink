@@ -12,4 +12,9 @@ router.get('/autofingers', asyncHandler(publishController.autofingersFeed));
 // "Publish now" — authed; pokes the Cloudflare deploy hook to rebuild the site.
 router.post('/trigger', requireAuth, asyncHandler(publishController.trigger));
 
+// Beijerterm.com terminology-article feed — token-gated, scoped to
+// publishBeijerterm notebooks only. Parallel to the autofingers routes above.
+router.get('/beijerterm', asyncHandler(publishController.beijertermFeed));
+router.post('/trigger-beijerterm', requireAuth, asyncHandler(publishController.triggerBeijerterm));
+
 export default router;

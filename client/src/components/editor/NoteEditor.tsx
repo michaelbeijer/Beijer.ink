@@ -14,6 +14,7 @@ import { BlockEditor } from './BlockEditor';
 import { TableOfContents } from './TableOfContents';
 import { TableMenu } from './TableMenu';
 import { PublishPanel } from './PublishPanel';
+import { BeijertermPublishPanel } from './BeijertermPublishPanel';
 import { splitBlocks } from '../../utils/blockParser';
 
 const TOOLBAR_KEY = 'beijer-ink-toolbar';
@@ -373,6 +374,9 @@ export function NoteEditor({ noteId, onNoteDeleted, isFullscreen, onToggleFullsc
 
       {/* Publishing controls — only for notes in a notebook flagged for autofingers */}
       {note?.notebook?.publishTarget && <PublishPanel note={note} />}
+
+      {/* Beijerterm article metadata — only for notes in a publishBeijerterm notebook */}
+      {note?.notebook?.publishBeijerterm && <BeijertermPublishPanel note={note} />}
 
       {/* Editor area */}
       <div className="flex-1 min-h-0 flex overflow-hidden relative">

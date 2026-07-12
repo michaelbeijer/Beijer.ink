@@ -15,6 +15,7 @@ import {
   StarOff,
   UploadCloud,
   CloudOff,
+  BookMarked,
 } from 'lucide-react';
 import type { FlatNotebookNode } from '../../utils/flattenNotebookTree';
 import type { Notebook } from '../../types/notebook';
@@ -44,6 +45,7 @@ interface SidebarNotebookNodeProps {
   onCreateNote: (notebookId: string) => void;
   onToggleFavorite: (id: string, currentState: boolean) => void;
   onTogglePublish: (id: string, currentState: boolean) => void;
+  onTogglePublishBeijerterm: (id: string, currentState: boolean) => void;
   onClose?: () => void;
 }
 
@@ -70,6 +72,7 @@ export function SidebarNotebookNode({
   onCreateNote,
   onToggleFavorite,
   onTogglePublish,
+  onTogglePublishBeijerterm,
   onClose,
 }: SidebarNotebookNodeProps) {
   const nb = node.notebook;
@@ -184,6 +187,13 @@ export function SidebarNotebookNode({
         />
       )}
 
+      {nb.publishBeijerterm && (
+        <BookMarked
+          className="w-3 h-3 shrink-0 text-accent"
+          aria-label="Published to beijerterm.com"
+        />
+      )}
+
       <span className="text-[10px] text-ink-dim tabular-nums">
         {nb._count.notes || ''}
       </span>
@@ -237,6 +247,20 @@ export function SidebarNotebookNode({
                 <><CloudOff className="w-3.5 h-3.5" /> Stop publishing to autofingers</>
               ) : (
                 <><UploadCloud className="w-3.5 h-3.5" /> Publish to autofingers</>
+              )}
+            </button>
+
+            <button
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-ink-secondary hover:bg-hover"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePublishBeijerterm(nb.id, !!nb.publishBeijerterm);
+              }}
+            >
+              {nb.publishBeijerterm ? (
+                <><CloudOff className="w-3.5 h-3.5" /> Stop publishing to beijerterm</>
+              ) : (
+                <><BookMarked className="w-3.5 h-3.5" /> Publish to beijerterm</>
               )}
             </button>
 

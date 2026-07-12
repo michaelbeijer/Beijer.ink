@@ -25,3 +25,9 @@ export async function publishAutofingers(): Promise<{ triggered: boolean; status
   const { data } = await api.post<{ triggered: boolean; status?: number }>('/publish/trigger');
   return data;
 }
+
+// "Publish now" for beijerterm.com — pokes its own Cloudflare deploy hook.
+export async function publishBeijerterm(): Promise<{ triggered: boolean; status?: number }> {
+  const { data } = await api.post<{ triggered: boolean; status?: number }>('/publish/trigger-beijerterm');
+  return data;
+}

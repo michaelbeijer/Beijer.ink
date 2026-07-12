@@ -31,6 +31,13 @@ export const config = {
   autofingersExportToken: process.env.AUTOFINGERS_EXPORT_TOKEN || '',
   cloudflareDeployHook: process.env.CLOUDFLARE_DEPLOY_HOOK_URL || '',
 
+  // beijerterm.com article publishing. Same shape as autofingers: a token-gated
+  // export feed the Beijerterm site build fetches, plus its own Cloudflare deploy
+  // hook for the "Publish now" button. Kept separate so the two sites have
+  // independent tokens and rebuild independently.
+  beijertermExportToken: process.env.BEIJERTERM_EXPORT_TOKEN || '',
+  beijertermDeployHook: process.env.BEIJERTERM_DEPLOY_HOOK_URL || '',
+
   isDev() {
     return this.nodeEnv === 'development';
   },
