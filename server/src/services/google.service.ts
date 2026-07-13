@@ -156,6 +156,101 @@ export async function listTaskLists(userId: string): Promise<GoogleTaskList[]> {
     .map((t) => ({ id: t.id!, title: t.title ?? '(untitled list)' }));
 }
 
+// ─── Google Tasks CRUD (for the two-way to-do sync) ───
+
+export interface GoogleTask {
+  id: string;
+  title: string;
+  notes: string;
+  due: string | null;   // 'YYYY-MM-DD' (date-only; Google Tasks ignores time) or null
+  completed: boolean;
+  updated: string;      // RFC3339
+  deleted: boolean;
+}
+
+// Google Tasks 'due' is a date (time ignored); send it at UTC midnight.
+function dueBody(due: string | null | undefined): string | null {
+  return due ? `${due}T00:00:00.000Z` : null;
+}
+
+/** Every task in a list, including completed/hidden/deleted (paginated). */
+export async function listTasks(userId: string, taskListId: string): Promise<GoogleTask[]> {
+  const client = await authorizedClient(userId);
+  if (!client) return [];
+  const api = google.tasks({ version: 'v1', auth: client });
+  const out: GoogleTask[] = [];
+  let pageToken: string | undefined;
+  do {
+    const res = await api.tasks.list({
+      tasklist: taskListId,
+      showCompleted: true,
+      showHidden: true,
+      showDeleted: true,
+      maxResults: 100,
+      pageToken,
+    });
+    for (const t of res.data.items ?? []) {
+      if (!t.id) continue;
+      out.push({
+        id: t.id,
+        title: t.title ?? '',
+        notes: t.notes ?? '',
+        due: t.due ? t.due.slice(0, 10) : null,
+        completed: t.status === 'completed',
+        updated: t.updated ?? '',
+        deleted: Boolean(t.deleted),
+      });
+    }
+    pageToken = res.data.nextPageToken ?? undefined;
+  } while (pageToken);
+  return out;
+}
+
+export async function createTask(
+  userId: string, taskListId: string,
+  data: { title: string; notes?: string; due?: string | null; completed?: boolean },
+): Promise<{ id: string; updated: string } | null> {
+  const client = await authorizedClient(userId);
+  if (!client) return null;
+  const api = google.tasks({ version: 'v1', auth: client });
+  const res = await api.tasks.insert({
+    tasklist: taskListId,
+    requestBody: {
+      title: data.title,
+      notes: data.notes || undefined,
+      due: dueBody(data.due) || undefined,
+      status: data.completed ? 'completed' : 'needsAction',
+    },
+  });
+  return res.data.id ? { id: res.data.id, updated: res.data.updated ?? '' } : null;
+}
+
+export async function updateTask(
+  userId: string, taskListId: string, taskId: string,
+  data: { title?: string; notes?: string; due?: string | null; completed?: boolean },
+): Promise<void> {
+  const client = await authorizedClient(userId);
+  if (!client) return;
+  const api = google.tasks({ version: 'v1', auth: client });
+  const body: Record<string, unknown> = {};
+  if (data.title !== undefined) body.title = data.title;
+  if (data.notes !== undefined) body.notes = data.notes;
+  if (data.due !== undefined) body.due = dueBody(data.due);
+  if (data.completed !== undefined) body.status = data.completed ? 'completed' : 'needsAction';
+  await api.tasks.patch({ tasklist: taskListId, task: taskId, requestBody: body });
+}
+
+/** Best-effort delete — never throws (a missing/already-deleted task is fine). */
+export async function deleteTask(userId: string, taskListId: string, taskId: string): Promise<void> {
+  const client = await authorizedClient(userId);
+  if (!client) return;
+  try {
+    await google.tasks({ version: 'v1', auth: client }).tasks.delete({ tasklist: taskListId, task: taskId });
+  } catch {
+    /* already gone / revoked — ignore */
+  }
+}
+
 /** Every calendar on the account, merged with any saved name/colour/enabled. */
 export async function listCalendars(userId: string): Promise<CalendarSource[]> {
   const client = await authorizedClient(userId);

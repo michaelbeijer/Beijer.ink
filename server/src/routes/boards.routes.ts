@@ -23,6 +23,7 @@ router.get('/:id', asyncHandler(boardsController.getOne));
 router.post('/', validate(createBoardSchema), asyncHandler(boardsController.create));
 router.patch('/:id', validate(updateBoardSchema), asyncHandler(boardsController.update));
 router.delete('/:id', asyncHandler(boardsController.remove));
+router.post('/:id/sync-google-tasks', asyncHandler(boardsController.syncGoogleTasks));
 
 // Columns
 router.post('/:id/columns', validate(createColumnSchema), asyncHandler(boardsController.createColumn));

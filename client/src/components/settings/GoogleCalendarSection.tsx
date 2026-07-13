@@ -241,8 +241,9 @@ export function GoogleCalendarSection() {
                   </p>
                 ) : (
                   <p className="text-[11px] text-ink-faint">
-                    Links a beijer.ink board to a Google Tasks list. The actual two-way syncing (add / edit / complete /
-                    delete both ways) is being switched on in the next update.
+                    Links a beijer.ink board to a Google Tasks list. Once linked, the board syncs both ways
+                    (add / edit / complete / delete) — automatically when you open it, or via the “Sync” button in
+                    the board header. <strong>Deletes propagate:</strong> removing a card or task on either side removes it on the other.
                   </p>
                 )}
               </>

@@ -50,6 +50,12 @@ export async function deleteBoard(id: string): Promise<void> {
   await api.delete(`/boards/${id}`);
 }
 
+/** Two-way sync this board with its linked Google Tasks list; returns the reconciled board. */
+export async function syncGoogleTasks(id: string): Promise<Board> {
+  const { data } = await api.post<Board>(`/boards/${id}/sync-google-tasks`);
+  return data;
+}
+
 // ── Columns ──
 
 export async function createColumn(boardId: string, name?: string): Promise<Column> {

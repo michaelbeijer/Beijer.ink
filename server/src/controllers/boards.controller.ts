@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/auth.js';
 import * as boardsService from '../services/boards.service.js';
 
 // ── Boards ──
@@ -72,9 +73,14 @@ export async function updateCard(req: Request, res: Response) {
   res.json(card);
 }
 
-export async function removeCard(req: Request, res: Response) {
-  await boardsService.deleteCard(req.params.cardId);
+export async function removeCard(req: AuthRequest, res: Response) {
+  await boardsService.deleteCard(req.params.cardId, req.userId);
   res.json({ success: true });
+}
+
+export async function syncGoogleTasks(req: AuthRequest, res: Response) {
+  const board = await boardsService.syncGoogleTasks(req.userId!, req.params.id);
+  res.json(board);
 }
 
 export async function moveCard(req: Request, res: Response) {

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Star, LayoutGrid } from 'lucide-react';
-import { getBoard, updateBoard } from '../../api/boards';
+import { Star, LayoutGrid, RefreshCw } from 'lucide-react';
+import { getBoard, updateBoard, syncGoogleTasks } from '../../api/boards';
 import type { Board } from '../../types/board';
 import { KanbanView } from './KanbanView';
 import { CardModal } from './CardModal';
@@ -38,6 +38,27 @@ function BoardContent({ board, onOpenNote }: { board: Board; onOpenNote: (noteId
     queryClient.invalidateQueries({ queryKey: ['board', board.id] });
     queryClient.invalidateQueries({ queryKey: ['boards'] });
   };
+
+  // Google Tasks two-way sync (only for boards linked to a task list).
+  const linked = Boolean(board.settings?.googleTaskListId);
+  const syncMutation = useMutation({
+    mutationFn: () => syncGoogleTasks(board.id),
+    onSuccess: (fresh) => {
+      queryClient.setQueryData(['board', board.id], fresh);
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+    },
+  });
+  // Auto-sync once when a linked board is opened. syncMutation is recreated each
+  // render, so pull the mutate fn out and guard with a ref to run it a single time.
+  const syncMutate = syncMutation.mutate;
+  const autoSynced = useRef(false);
+  useEffect(() => {
+    if (linked && !autoSynced.current) {
+      autoSynced.current = true;
+      syncMutate();
+    }
+  }, [linked, syncMutate]);
 
   const favoriteMutation = useMutation({
     mutationFn: (isFavorite: boolean) => updateBoard(board.id, { isFavorite }),
@@ -99,6 +120,18 @@ function BoardContent({ board, onOpenNote }: { board: Board; onOpenNote: (noteId
         >
           <Star className="w-4 h-4" fill={board.isFavorite ? 'currentColor' : 'none'} />
         </button>
+
+        {linked && (
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md text-ink-muted hover:text-ink hover:bg-hover disabled:opacity-60"
+            title="Sync this board with its linked Google Tasks list"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            {syncMutation.isPending ? 'Syncing…' : 'Sync'}
+          </button>
+        )}
       </div>
 
       <KanbanView board={board} onOpenCard={setOpenCardId} />

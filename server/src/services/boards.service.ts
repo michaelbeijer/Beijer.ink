@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
+import * as googleService from './google.service.js';
 
 // Trello-style default label palette (names empty until the user names them)
 const DEFAULT_LABEL_COLORS = ['green', 'yellow', 'orange', 'red', 'purple', 'blue'];
@@ -239,8 +240,132 @@ export async function updateCard(
   });
 }
 
-export async function deleteCard(id: string) {
+export async function deleteCard(id: string, userId?: string) {
+  // Propagate the delete to Google Tasks when this card mirrors a task on a
+  // linked board (best-effort — a Google failure must never block the local
+  // delete). Only runs when we have a userId (i.e. the authed request path).
+  if (userId) {
+    try {
+      const card = await prisma.card.findUnique({
+        where: { id },
+        select: {
+          googleTaskId: true,
+          column: { select: { board: { select: { settings: true } } } },
+        },
+      });
+      const listId = (card?.column?.board?.settings as BoardSettings | null)?.googleTaskListId;
+      if (card?.googleTaskId && listId) {
+        await googleService.deleteTask(userId, listId, card.googleTaskId);
+      }
+    } catch {
+      /* best-effort; fall through to the local delete regardless */
+    }
+  }
   await prisma.card.delete({ where: { id } });
+}
+
+// ─── Two-way Google Tasks sync ───────────────────────────────────────────
+// Reconcile a linked board's cards with its Google Tasks list. Matched by the
+// card's stored googleTaskId. Adds, edits and completions flow both ways
+// (last edit wins by timestamp); deletes propagate (a task deleted in Google
+// deletes its card here; a card deleted here already deleted its task via
+// deleteCard above). The first sync simply MERGES both sides (no card has a
+// task-id yet, so nothing is treated as deleted).
+
+function localDateStr(d: Date | null): string | null {
+  if (!d) return null;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+// Parse 'YYYY-MM-DD' back to a Date at local noon (so the calendar day is stable).
+function dueToDate(due: string | null): Date | null {
+  return due ? new Date(`${due}T12:00:00`) : null;
+}
+
+export async function syncGoogleTasks(userId: string, boardId: string) {
+  const board = await prisma.board.findUnique({
+    where: { id: boardId },
+    include: { columns: { orderBy: { sortOrder: 'asc' }, include: { cards: true } } },
+  });
+  if (!board) throw new Error('Board not found');
+  const listId = (board.settings as BoardSettings | null)?.googleTaskListId;
+  if (!listId) throw new Error('This board is not linked to a Google Tasks list.');
+  const firstColumn = board.columns[0];
+  if (!firstColumn) throw new Error('This board has no lists.');
+
+  const gtasks = await googleService.listTasks(userId, listId);
+  const gById = new Map(gtasks.map((t) => [t.id, t]));
+  const matched = new Set<string>();
+  const cards = board.columns.flatMap((c) => c.cards);
+
+  for (const card of cards) {
+    if (card.googleTaskId) {
+      const g = gById.get(card.googleTaskId);
+      if (!g || g.deleted) {
+        // Deleted in Google → delete here (propagate).
+        await prisma.card.delete({ where: { id: card.id } });
+        continue;
+      }
+      matched.add(g.id);
+      const cardDue = localDateStr(card.dueDate);
+      const differs =
+        g.title !== card.title ||
+        (g.notes || '') !== (card.description || '') ||
+        (g.due || null) !== (cardDue || null) ||
+        g.completed !== card.dueDone;
+      if (differs) {
+        const gNewer = Boolean(g.updated) && new Date(g.updated).getTime() > card.updatedAt.getTime();
+        if (gNewer) {
+          await prisma.card.update({
+            where: { id: card.id },
+            data: {
+              title: g.title,
+              description: g.notes || '',
+              dueDate: dueToDate(g.due),
+              dueDone: g.completed,
+            },
+          });
+        } else {
+          await googleService.updateTask(userId, listId, g.id, {
+            title: card.title,
+            notes: card.description || '',
+            due: cardDue,
+            completed: card.dueDone,
+          });
+        }
+      }
+    } else {
+      // Local-only card → create the Google task and remember its id.
+      const created = await googleService.createTask(userId, listId, {
+        title: card.title,
+        notes: card.description || '',
+        due: localDateStr(card.dueDate),
+        completed: card.dueDone,
+      });
+      if (created) {
+        await prisma.card.update({ where: { id: card.id }, data: { googleTaskId: created.id } });
+      }
+    }
+  }
+
+  // Google tasks with no matching card → create cards (append to the first list).
+  let sortOrder = firstColumn.cards.length;
+  for (const g of gtasks) {
+    if (g.deleted || matched.has(g.id)) continue;
+    await prisma.card.create({
+      data: {
+        columnId: firstColumn.id,
+        title: g.title,
+        description: g.notes || '',
+        dueDate: dueToDate(g.due),
+        dueDone: g.completed,
+        googleTaskId: g.id,
+        sortOrder: sortOrder++,
+      },
+    });
+  }
+
+  return getBoard(boardId);
 }
 
 /**
