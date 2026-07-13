@@ -197,7 +197,14 @@ interface UnifiedCalendarViewProps {
 
 export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<CalMode>(() => (read('bink:calendar:mode', 'month') as CalMode));
+  const [mode, setMode] = useState<CalMode>(() => {
+    // Respect an explicit stored choice; otherwise default phones to the (much
+    // more usable) week view and desktops to month.
+    const stored = read('bink:calendar:mode', '');
+    if (stored === 'month' || stored === 'week' || stored === 'weeks') return stored;
+    const mobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+    return mobile ? 'week' : 'month';
+  });
   const [anchor, setAnchor] = useState<Date>(() => startOfDay(new Date()));
   const [hidden, setHidden] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(read('bink:calendar:hidden', '[]'))); } catch { return new Set(); }

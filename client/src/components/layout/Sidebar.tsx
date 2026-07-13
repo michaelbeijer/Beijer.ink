@@ -462,7 +462,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
           }`}
         >
           <CalendarDays className="w-4 h-4 text-accent shrink-0" />
-          <span className="flex-1 text-left">All Calendar</span>
+          <span className="flex-1 text-left">Calendar</span>
           <span className="text-[10px] text-ink-faint">every board</span>
         </button>
       )}
