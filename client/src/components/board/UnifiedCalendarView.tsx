@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, CalendarDays, Loader2, ExternalLink } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, CalendarDays, Loader2, ExternalLink, Plus } from 'lucide-react';
 import type { Board, Card } from '../../types/board';
-import { getCalendarCards, getBoard } from '../../api/boards';
+import { getCalendarCards, getBoard, getBoards, createCard, updateCard } from '../../api/boards';
 import { getGoogleEvents, getGoogleStatus } from '../../api/google';
 import {
   monthGrid, monthLabel, addMonths, addDays, startOfWeek, startOfDay,
@@ -38,6 +38,12 @@ function dayKey(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+// A card's due date is stored as a timestamp; anchor it at local noon so it
+// always lands on the intended calendar day regardless of timezone.
+function toDueIso(d: Date): string {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0).toISOString();
+}
+
 function read(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
 }
@@ -58,6 +64,9 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
   });
   const [opening, setOpening] = useState(false);
   const [openCard, setOpenCard] = useState<{ board: Board; card: Card } | null>(null);
+  // Card currently being dragged to a new day, and the board new "+" cards go to.
+  const [dragCardId, setDragCardId] = useState<string | null>(null);
+  const [addBoardId, setAddBoardId] = useState<string>(() => read('bink:calendar:addBoard', ''));
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ['calendar'],
@@ -74,6 +83,8 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     queryKey: ['google-status'],
     queryFn: getGoogleStatus,
   });
+  // Boards, for the "add new cards to →" target selector.
+  const { data: boards = [] } = useQuery({ queryKey: ['boards'], queryFn: getBoards });
 
   function setModePref(m: CalMode) { setMode(m); write('bink:calendar:mode', m); }
   function toggleSource(id: string) {
@@ -213,6 +224,39 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     queryClient.invalidateQueries({ queryKey: ['calendar'] });
   }
 
+  // The board that inline "+ New card" additions go to (remembered; falls back
+  // to the first board if the stored one is gone).
+  const targetBoardId = addBoardId && boards.some((b) => b.id === addBoardId) ? addBoardId : (boards[0]?.id ?? '');
+  function chooseAddBoard(id: string) { setAddBoardId(id); write('bink:calendar:addBoard', id); }
+
+  // Drag a native card onto a day (or the No-date column) to reschedule it.
+  const rescheduleMutation = useMutation({
+    mutationFn: (v: { cardId: string; dueDate: string | null }) => updateCard(v.cardId, { dueDate: v.dueDate }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar'] }),
+  });
+  // Quick-add a dated card to the target board's first column.
+  const addCardMutation = useMutation({
+    mutationFn: async (v: { boardId: string; title: string; date: Date }) => {
+      const board = await getBoard(v.boardId);
+      const col = board.columns[0];
+      if (!col) throw new Error('That board has no lists to add a card to.');
+      const card = await createCard(col.id, v.title);
+      await updateCard(card.id, { dueDate: toDueIso(v.date) });
+      return card;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar'] }),
+  });
+
+  function dropOn(date: Date | null) {
+    if (dragCardId) rescheduleMutation.mutate({ cardId: dragCardId, dueDate: date ? toDueIso(date) : null });
+    setDragCardId(null);
+  }
+  function addOn(date: Date) {
+    if (!targetBoardId) return;
+    const title = window.prompt('New card:');
+    if (title && title.trim()) addCardMutation.mutate({ boardId: targetBoardId, title: title.trim(), date });
+  }
+
   // One chip, colour-coded by source (left border). Native items open the
   // editor; external (Google) items open in Google and show a link glyph.
   const renderItem = (it: DisplayItem, showDate = false) => {
@@ -221,8 +265,11 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
       : () => it.card && handleOpenCard(it.card);
     return (
       <button key={it.key} onClick={onClick} disabled={!it.external && opening}
-        title={`${it.sourceName}: ${it.title}${it.done ? ' (done)' : ''}${it.external ? ' · Google (read-only)' : ''}`}
-        className="w-full text-left text-[11px] leading-snug px-1.5 py-1 rounded bg-surface border border-edge hover:border-accent block"
+        draggable={!it.external}
+        onDragStart={it.external ? undefined : () => { if (it.card) setDragCardId(it.card.id); }}
+        onDragEnd={() => setDragCardId(null)}
+        title={`${it.sourceName}: ${it.title}${it.done ? ' (done)' : ''}${it.external ? ' · Google (read-only)' : ' · drag to reschedule'}`}
+        className={`w-full text-left text-[11px] leading-snug px-1.5 py-1 rounded bg-surface border border-edge hover:border-accent block ${it.external ? '' : 'cursor-grab active:cursor-grabbing'}`}
         style={{ borderLeft: `3px solid ${it.color}` }}>
         <span className="flex items-center gap-1">
           <span className={`flex-1 truncate ${it.done ? 'line-through text-ink-faint' : 'text-ink'}`}>{it.title || '(untitled)'}</span>
@@ -278,6 +325,14 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
             </button>
           ))}
         </div>
+
+        {boards.length > 0 && (
+          <select value={targetBoardId} onChange={(e) => chooseAddBoard(e.target.value)}
+            title="New cards added from the calendar (the + on a day) go to this board"
+            className="ml-2 text-xs bg-input-bg border border-edge rounded px-1.5 py-1 text-ink-muted max-w-[9rem]">
+            {boards.map((b) => <option key={b.id} value={b.id}>+ {b.name}</option>)}
+          </select>
+        )}
       </div>
 
       {/* Source filter chips (boards + Google calendars) */}
@@ -313,7 +368,10 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
           ) : (
             <div className="flex gap-2 h-full overflow-x-auto pb-2">
               {weekData.noDate.length > 0 && (
-                <div className="flex flex-col w-64 shrink-0 rounded-lg border border-edge bg-card p-2">
+                <div
+                  onDragOver={(e) => { if (dragCardId) e.preventDefault(); }}
+                  onDrop={() => dropOn(null)}
+                  className={`flex flex-col w-64 shrink-0 rounded-lg border bg-card p-2 ${dragCardId ? 'border-accent' : 'border-edge'}`}>
                   <div className="flex items-baseline justify-between mb-2 px-0.5 shrink-0">
                     <span className="text-sm font-medium text-ink">No date</span>
                     <span className="text-xs text-ink-faint">{weekData.noDate.length}</span>
@@ -325,7 +383,9 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
               )}
               {weekData.cols.map((col) => (
                 <div key={col.key}
-                  className={`flex flex-col w-64 shrink-0 rounded-lg border p-2 ${col.isThisWeek ? 'border-accent bg-accent/5' : 'border-edge bg-card'}`}>
+                  onDragOver={(e) => { if (dragCardId) e.preventDefault(); }}
+                  onDrop={() => dropOn(new Date(Number(col.key)))}
+                  className={`flex flex-col w-64 shrink-0 rounded-lg border p-2 ${col.isThisWeek ? 'border-accent bg-accent/5' : dragCardId ? 'border-accent bg-card' : 'border-edge bg-card'}`}>
                   <div className="flex items-baseline justify-between px-0.5 shrink-0">
                     <span className={`text-sm font-medium ${col.isThisWeek ? 'text-accent' : 'text-ink'}`}>{col.label}</span>
                     <span className="text-xs text-ink-faint">{col.items.length}</span>
@@ -352,11 +412,21 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
                 const dayItems = byDay.get(dayKey(date)) ?? [];
                 return (
                   <div key={dayKey(date)}
-                    className={`flex flex-col rounded-lg border p-1.5 ${mode === 'week' ? 'min-h-0' : 'min-h-[6.5rem]'} ${
-                      isToday ? 'border-accent bg-accent/5' : 'border-edge'} ${inMonth ? 'bg-card' : 'bg-panel/40'}`}>
-                    <div className={`text-xs mb-1 shrink-0 ${isToday ? 'font-semibold text-accent' : inMonth ? 'text-ink' : 'text-ink-faint'}`}>
-                      {mode === 'week' && <span className="mr-1">{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>}
-                      {date.getDate()}
+                    onDragOver={(e) => { if (dragCardId) e.preventDefault(); }}
+                    onDrop={() => dropOn(date)}
+                    className={`group flex flex-col rounded-lg border p-1.5 ${mode === 'week' ? 'min-h-0' : 'min-h-[6.5rem]'} ${
+                      isToday ? 'border-accent bg-accent/5' : 'border-edge'} ${inMonth ? 'bg-card' : 'bg-panel/40'} ${dragCardId ? 'hover:border-accent hover:bg-accent/5' : ''}`}>
+                    <div className={`flex items-center justify-between text-xs mb-1 shrink-0 ${isToday ? 'font-semibold text-accent' : inMonth ? 'text-ink' : 'text-ink-faint'}`}>
+                      <span>
+                        {mode === 'week' && <span className="mr-1">{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>}
+                        {date.getDate()}
+                      </span>
+                      {targetBoardId && (
+                        <button onClick={() => addOn(date)} title="Add a card on this day"
+                          className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-accent transition-opacity">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
                       {dayItems.map((it) => renderItem(it))}
