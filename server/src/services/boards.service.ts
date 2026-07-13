@@ -24,6 +24,7 @@ interface Label {
 interface BoardSettings {
   year?: number | null;
   showOverdue?: boolean;
+  googleTaskListId?: string | null;
 }
 
 interface ChecklistItem {

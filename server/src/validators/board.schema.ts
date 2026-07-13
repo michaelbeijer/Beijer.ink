@@ -17,6 +17,8 @@ const boardTypeSchema = z.enum(['calendar', 'todo', 'freeform']);
 const boardSettingsSchema = z.object({
   year: z.number().int().nullable().optional(),
   showOverdue: z.boolean().optional(),
+  // Link to a Google Tasks list for two-way to-do sync (null clears the link).
+  googleTaskListId: z.string().nullable().optional(),
 });
 
 export const createBoardSchema = z.object({
