@@ -17,6 +17,8 @@ export type BoardType = 'calendar' | 'todo' | 'freeform';
 export interface BoardSettings {
   year?: number | null;
   showOverdue?: boolean;
+  // When set, this board is two-way synced with the given Google Tasks list.
+  googleTaskListId?: string | null;
 }
 
 /** Lightweight board, used in the sidebar list. */

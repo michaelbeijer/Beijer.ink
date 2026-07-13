@@ -8,7 +8,14 @@ import { config } from '../config.js';
 // layer — fetched live, normalised, and merged into the calendar UI; they are
 // NEVER written into the `cards` table.
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/calendar.readonly',
+  // Read/write access to Google Tasks, for the two-way to-do sync. Adding this
+  // means existing users must reconnect once to grant it (see hasTasksScope).
+  'https://www.googleapis.com/auth/tasks',
+];
+
+const TASKS_SCOPE = 'https://www.googleapis.com/auth/tasks';
 
 // Fallback colours if a calendar has none / isn't yet configured.
 const PALETTE = [
@@ -125,8 +132,28 @@ export async function getStatus(userId: string) {
   return {
     configured: isConfigured(),
     connected: Boolean(conn?.refreshToken || conn?.accessToken),
+    // Whether the granted scopes include Google Tasks. Users who connected
+    // before Tasks was added will be connected:true but tasksScope:false, and
+    // need to reconnect to enable the to-do sync.
+    tasksScope: Boolean(conn?.scope?.includes(TASKS_SCOPE)),
     calendars: ((conn?.calendars as unknown) as CalendarSource[]) ?? [],
   };
+}
+
+export interface GoogleTaskList {
+  id: string;
+  title: string;
+}
+
+/** The user's Google Tasks lists (for linking a board to one). */
+export async function listTaskLists(userId: string): Promise<GoogleTaskList[]> {
+  const client = await authorizedClient(userId);
+  if (!client) return [];
+  const tasks = google.tasks({ version: 'v1', auth: client });
+  const res = await tasks.tasklists.list({ maxResults: 100 });
+  return (res.data.items ?? [])
+    .filter((t) => t.id)
+    .map((t) => ({ id: t.id!, title: t.title ?? '(untitled list)' }));
 }
 
 /** Every calendar on the account, merged with any saved name/colour/enabled. */

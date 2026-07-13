@@ -14,6 +14,7 @@ router.get('/connect', requireAuth, asyncHandler(googleController.connect));
 router.get('/calendars', requireAuth, asyncHandler(googleController.listCalendars));
 router.put('/calendars', requireAuth, asyncHandler(googleController.saveCalendars));
 router.get('/events', requireAuth, asyncHandler(googleController.events));
+router.get('/task-lists', requireAuth, asyncHandler(googleController.taskLists));
 router.post('/disconnect', requireAuth, asyncHandler(googleController.disconnect));
 
 export default router;

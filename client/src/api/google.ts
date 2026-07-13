@@ -22,7 +22,18 @@ export interface GoogleEvent {
 export interface GoogleStatus {
   configured: boolean;
   connected: boolean;
+  tasksScope: boolean; // granted scopes include Google Tasks (needed for to-do sync)
   calendars: GoogleCalendarSource[];
+}
+
+export interface GoogleTaskList {
+  id: string;
+  title: string;
+}
+
+export async function getGoogleTaskLists(): Promise<GoogleTaskList[]> {
+  const { data } = await api.get<GoogleTaskList[]>('/google/task-lists');
+  return data;
 }
 
 export async function getGoogleStatus(): Promise<GoogleStatus> {

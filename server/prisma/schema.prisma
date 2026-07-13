@@ -125,11 +125,15 @@ model Card {
   checklist   Json        @default("[]") // [{ id, text, done }]
   noteId      String?     @map("note_id")
   note        Note?       @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  // Two-way Google Tasks sync: the id of the Google task this card mirrors
+  // (null for local-only cards, or cards on boards not linked to a task list).
+  googleTaskId String?    @map("google_task_id")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
   @@index([columnId])
   @@index([noteId])
+  @@index([googleTaskId])
   @@map("cards")
 }
 

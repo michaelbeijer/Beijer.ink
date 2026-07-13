@@ -45,6 +45,10 @@ export async function events(req: AuthRequest, res: Response) {
   res.json(await googleService.getEvents(req.userId!, from, to));
 }
 
+export async function taskLists(req: AuthRequest, res: Response) {
+  res.json(await googleService.listTaskLists(req.userId!));
+}
+
 export async function disconnect(req: AuthRequest, res: Response) {
   await googleService.disconnect(req.userId!);
   res.json({ ok: true });
