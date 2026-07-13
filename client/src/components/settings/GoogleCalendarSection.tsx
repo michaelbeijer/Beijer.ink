@@ -53,10 +53,11 @@ export function GoogleCalendarSection() {
     queryFn: getBoards,
     enabled: connected && tasksScope,
   });
-  const { data: taskLists = [] } = useQuery({
+  const { data: taskLists = [], isLoading: listsLoading, isError: listsError } = useQuery({
     queryKey: ['google-task-lists'],
     queryFn: getGoogleTaskLists,
     enabled: connected && tasksScope,
+    retry: false,
   });
 
   const linkMutation = useMutation({
@@ -191,40 +192,59 @@ export function GoogleCalendarSection() {
                     ))}
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <select
-                    value={linkBoard}
-                    onChange={(e) => setLinkBoard(e.target.value)}
-                    className="text-xs bg-input-bg border border-edge rounded px-1.5 py-1 text-ink flex-1 min-w-0"
-                  >
-                    <option value="">Board…</option>
-                    {boards.filter((b) => !b.settings?.googleTaskListId).map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                  <span className="text-ink-faint text-xs">↔</span>
-                  <select
-                    value={linkList}
-                    onChange={(e) => setLinkList(e.target.value)}
-                    className="text-xs bg-input-bg border border-edge rounded px-1.5 py-1 text-ink flex-1 min-w-0"
-                  >
-                    <option value="">Task list…</option>
-                    {taskLists.map((l) => (
-                      <option key={l.id} value={l.id}>{l.title}</option>
-                    ))}
-                  </select>
+                <div className="flex items-end gap-2">
+                  <label className="flex-1 min-w-0">
+                    <span className="block text-[10px] text-ink-faint mb-0.5">beijer.ink board</span>
+                    <select
+                      value={linkBoard}
+                      onChange={(e) => setLinkBoard(e.target.value)}
+                      className="w-full text-xs bg-input-bg border border-edge rounded px-1.5 py-1 text-ink"
+                    >
+                      <option value="">Board…</option>
+                      {boards.filter((b) => !b.settings?.googleTaskListId).map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <span className="text-ink-faint text-xs pb-1.5">↔</span>
+                  <label className="flex-1 min-w-0">
+                    <span className="block text-[10px] text-ink-faint mb-0.5">Google Tasks list</span>
+                    <select
+                      value={linkList}
+                      onChange={(e) => setLinkList(e.target.value)}
+                      disabled={taskLists.length === 0}
+                      className="w-full text-xs bg-input-bg border border-edge rounded px-1.5 py-1 text-ink disabled:opacity-60"
+                    >
+                      <option value="">{listsLoading ? 'Loading…' : 'Task list…'}</option>
+                      {taskLists.map((l) => (
+                        <option key={l.id} value={l.id}>{l.title}</option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     disabled={!linkBoard || !linkList || linkMutation.isPending}
                     onClick={() => linkMutation.mutate({ boardId: linkBoard, listId: linkList })}
-                    className="shrink-0 px-2.5 py-1 text-xs rounded-md bg-accent text-white hover:opacity-90 disabled:opacity-50"
+                    className="shrink-0 px-2.5 py-1.5 text-xs rounded-md bg-accent text-white hover:opacity-90 disabled:opacity-50"
                   >
                     Link
                   </button>
                 </div>
-                <p className="text-[11px] text-ink-faint">
-                  This links a board to a Google Tasks list. The actual two-way syncing (add / edit / complete / delete
-                  both ways) is being switched on in the next update.
-                </p>
+                {listsError ? (
+                  <p className="text-[11px] text-red-500">
+                    Couldn't load your Google Tasks lists. Most often this means the <strong>Google Tasks API</strong> isn't
+                    enabled in your Google Cloud project — enable it under APIs &amp; Services → Library → “Google Tasks API”,
+                    then reload.
+                  </p>
+                ) : !listsLoading && taskLists.length === 0 ? (
+                  <p className="text-[11px] text-ink-faint">
+                    No Google Tasks lists found on this account.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-ink-faint">
+                    Links a beijer.ink board to a Google Tasks list. The actual two-way syncing (add / edit / complete /
+                    delete both ways) is being switched on in the next update.
+                  </p>
+                )}
               </>
             )}
           </div>
