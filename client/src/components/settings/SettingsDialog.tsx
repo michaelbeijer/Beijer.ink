@@ -3,51 +3,13 @@ import { X } from 'lucide-react';
 import { ChangePasswordSection } from './ChangePasswordSection';
 import { DownloadBackupSection } from './DownloadBackupSection';
 import { GoogleCalendarSection } from './GoogleCalendarSection';
-import { useBoolSetting, SETTING_CALENDAR_DENSITY_STRIP } from '../../hooks/useAppSettings';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2">
-      <div className="min-w-0">
-        <div className="text-sm text-ink">{label}</div>
-        <div className="text-xs text-ink-muted">{description}</div>
-      </div>
-      <button
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
-          checked ? 'bg-accent' : 'bg-muted-bg'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-4' : ''
-          }`}
-        />
-      </button>
-    </div>
-  );
-}
-
 export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
-  const [densityStrip, setDensityStrip] = useBoolSetting(SETTING_CALENDAR_DENSITY_STRIP, true);
-
   // Escape to close
   useEffect(() => {
     if (!isOpen) return;
@@ -85,19 +47,6 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
             <div className="space-y-1">
               <ChangePasswordSection />
             </div>
-          </section>
-
-          {/* Calendar section */}
-          <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2 px-4">
-              Calendar
-            </h3>
-            <ToggleRow
-              label="Week density strip"
-              description="Show the busy-ness overview row at the top of the mobile weekly calendar."
-              checked={densityStrip}
-              onChange={setDensityStrip}
-            />
           </section>
 
           {/* Integrations section */}

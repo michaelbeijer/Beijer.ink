@@ -43,6 +43,3 @@ export function useBoolSetting(key: string, fallback: boolean) {
 
   return [value, set] as const;
 }
-
-// Setting keys live here so the dialog and the consumers can't drift.
-export const SETTING_CALENDAR_DENSITY_STRIP = 'calendarDensityStrip';

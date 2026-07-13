@@ -53,39 +53,12 @@ function write(key: string, value: string): void {
 }
 
 // ─── Mobile week ("aCalendar"-style) ─────────────────────────────────────
-// A phone-friendly week: a density strip up top, then every day as an equal
-// box in a fixed 2-col × 4-row column-major grid (Mon–Thu down the left,
-// Fri–Sun + a mini-month down the right). A busy day scrolls inside its box,
-// so the week never reflows. Ported from the old per-board CalendarView and
-// adapted to the unified (all-boards + Google) DisplayItem model.
+// A phone-friendly week: every day as an equal box in a fixed 2-col × 4-row
+// column-major grid (Mon–Thu down the left, Fri–Sun + a mini-month down the
+// right). A busy day scrolls inside its box, so the week never reflows.
+// Ported from the old per-board CalendarView and adapted to the unified
+// (all-boards + Google) DisplayItem model.
 const MOBILE_WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-/** Compact "how busy is each day" strip — a week-at-a-glance scrubber. */
-function DensityStrip({
-  weekDays, itemsForDay, today,
-}: { weekDays: Date[]; itemsForDay: (d: Date) => DisplayItem[]; today: Date }) {
-  return (
-    <div className="flex gap-1 mb-3 shrink-0">
-      {weekDays.map((d, i) => {
-        const cs = itemsForDay(d);
-        const isToday = sameDay(d, today);
-        return (
-          <div key={d.toISOString()} className="flex-1 flex flex-col items-center gap-1">
-            <div className={`w-full h-9 rounded-md flex flex-col justify-end gap-0.5 p-1 ${
-              isToday ? 'bg-accent/15 ring-1 ring-accent' : 'bg-muted-bg'}`}>
-              {cs.slice(0, 4).map((c) => (
-                <span key={c.key} className="h-1 rounded-full" style={{ background: c.color }} />
-              ))}
-            </div>
-            <span className={`text-[10px] ${isToday ? 'text-accent font-semibold' : 'text-ink-muted'}`}>
-              {MOBILE_WEEKDAY_LETTERS[i]}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 /** Month picker for the 8th grid cell; tap a day jumps to its week. */
 function MiniMonth({
@@ -530,7 +503,6 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
             <div className="text-[11px] text-ink-muted mb-2 shrink-0">
               wk {isoWeek(anchor)} · {days[0].getDate()}–{days[6].getDate()}
             </div>
-            <DensityStrip weekDays={days} itemsForDay={(d) => byDay.get(dayKey(d)) ?? []} today={today} />
             {/* Fixed week shape: 2 cols × 4 rows, filled column-major (Mon–Thu
                 left, Fri–Sun + mini-month right). Each day is an equal box. */}
             <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-2 flex-1 min-h-0">
