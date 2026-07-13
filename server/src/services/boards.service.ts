@@ -264,13 +264,25 @@ export async function deleteCard(id: string, userId?: string) {
   await prisma.card.delete({ where: { id } });
 }
 
-// ─── Two-way Google Tasks sync ───────────────────────────────────────────
+// ─── Two-way Google Tasks sync (column-driven) ───────────────────────────
 // Reconcile a linked board's cards with its Google Tasks list. Matched by the
-// card's stored googleTaskId. Adds, edits and completions flow both ways
-// (last edit wins by timestamp); deletes propagate (a task deleted in Google
-// deletes its card here; a card deleted here already deleted its task via
-// deleteCard above). The first sync simply MERGES both sides (no card has a
-// task-id yet, so nothing is treated as deleted).
+// card's stored googleTaskId.
+//
+// Google Tasks is a FLAT list with a single binary "completed" flag — it has
+// no concept of columns. So we project the board onto it like this:
+//   • The LAST column is the "done" column: a card there ⇔ a completed task.
+//   • The FIRST column is the "intake" column: new open Google tasks appear here.
+//   • Any middle columns (e.g. "Doing") are beijer.ink-only workflow nuance —
+//     invisible to Google, since both are just "open" tasks there.
+// A card's done-ness is therefore its COLUMN, not its due-date checkbox.
+//
+// Title / notes / due / completion flow both ways (last edit wins by
+// timestamp). Deletes propagate. Completed Google tasks that were NEVER linked
+// to a card are IGNORED (no dragging finished history into the board); only
+// open unmatched tasks create new cards.
+//
+// The first sync simply MERGES both sides (no card has a task-id yet, so
+// nothing is treated as deleted).
 
 function localDateStr(d: Date | null): string | null {
   if (!d) return null;
@@ -292,6 +304,16 @@ export async function syncGoogleTasks(userId: string, boardId: string) {
   if (!listId) throw new Error('This board is not linked to a Google Tasks list.');
   const firstColumn = board.columns[0];
   if (!firstColumn) throw new Error('This board has no lists.');
+  const doneColumn = board.columns[board.columns.length - 1];
+  // A distinct done column only exists when the board has ≥2 lists. With a
+  // single list, fall back to the card's due-done flag for completion.
+  const hasDoneColumn = doneColumn.id !== firstColumn.id;
+  const isCardDone = (c: { columnId: string; dueDone: boolean }) =>
+    hasDoneColumn ? c.columnId === doneColumn.id : c.dueDone;
+
+  // Track append positions so moved/created cards get a sensible sortOrder.
+  let firstNext = firstColumn.cards.length;
+  let doneNext = doneColumn.cards.length;
 
   const gtasks = await googleService.listTasks(userId, listId);
   const gById = new Map(gtasks.map((t) => [t.id, t]));
@@ -308,29 +330,38 @@ export async function syncGoogleTasks(userId: string, boardId: string) {
       }
       matched.add(g.id);
       const cardDue = localDateStr(card.dueDate);
+      const cardDone = isCardDone(card);
       const differs =
         g.title !== card.title ||
         (g.notes || '') !== (card.description || '') ||
         (g.due || null) !== (cardDue || null) ||
-        g.completed !== card.dueDone;
+        g.completed !== cardDone;
       if (differs) {
         const gNewer = Boolean(g.updated) && new Date(g.updated).getTime() > card.updatedAt.getTime();
         if (gNewer) {
-          await prisma.card.update({
-            where: { id: card.id },
-            data: {
-              title: g.title,
-              description: g.notes || '',
-              dueDate: dueToDate(g.due),
-              dueDone: g.completed,
-            },
-          });
+          // Pull Google → card. If completion flipped, move the card between the
+          // done and intake columns accordingly.
+          const data: Prisma.CardUpdateInput = {
+            title: g.title,
+            description: g.notes || '',
+            dueDate: dueToDate(g.due),
+            dueDone: g.completed,
+          };
+          if (hasDoneColumn && g.completed && !cardDone) {
+            data.column = { connect: { id: doneColumn.id } };
+            data.sortOrder = doneNext++;
+          } else if (hasDoneColumn && !g.completed && cardDone) {
+            data.column = { connect: { id: firstColumn.id } };
+            data.sortOrder = firstNext++;
+          }
+          await prisma.card.update({ where: { id: card.id }, data });
         } else {
+          // Push card → Google (completion driven by the card's column).
           await googleService.updateTask(userId, listId, g.id, {
             title: card.title,
             notes: card.description || '',
             due: cardDue,
-            completed: card.dueDone,
+            completed: cardDone,
           });
         }
       }
@@ -340,7 +371,7 @@ export async function syncGoogleTasks(userId: string, boardId: string) {
         title: card.title,
         notes: card.description || '',
         due: localDateStr(card.dueDate),
-        completed: card.dueDone,
+        completed: isCardDone(card),
       });
       if (created) {
         await prisma.card.update({ where: { id: card.id }, data: { googleTaskId: created.id } });
@@ -348,19 +379,20 @@ export async function syncGoogleTasks(userId: string, boardId: string) {
     }
   }
 
-  // Google tasks with no matching card → create cards (append to the first list).
-  let sortOrder = firstColumn.cards.length;
+  // Unmatched Google tasks → create cards, but ONLY for open tasks. Completed
+  // tasks that were never linked are historical noise and are ignored (they'd
+  // otherwise resurface finished items in the intake column).
   for (const g of gtasks) {
-    if (g.deleted || matched.has(g.id)) continue;
+    if (g.deleted || g.completed || matched.has(g.id)) continue;
     await prisma.card.create({
       data: {
         columnId: firstColumn.id,
         title: g.title,
         description: g.notes || '',
         dueDate: dueToDate(g.due),
-        dueDone: g.completed,
+        dueDone: false,
         googleTaskId: g.id,
-        sortOrder: sortOrder++,
+        sortOrder: firstNext++,
       },
     });
   }

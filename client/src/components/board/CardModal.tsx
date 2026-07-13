@@ -218,14 +218,19 @@ export function CardModal({ board, card, onClose, onOpenNote }: CardModalProps) 
               />
               {card.dueDate && (
                 <>
-                  <label className="flex items-center gap-1.5 text-sm text-ink-muted">
-                    <input
-                      type="checkbox"
-                      checked={card.dueDone}
-                      onChange={(e) => patchMutation.mutate({ dueDone: e.target.checked })}
-                    />
-                    Complete
-                  </label>
+                  {/* On boards linked to Google Tasks, "done" is driven by the
+                      card's column (the last list), not this checkbox — so we
+                      hide it to keep a single source of truth. */}
+                  {!board.settings?.googleTaskListId && (
+                    <label className="flex items-center gap-1.5 text-sm text-ink-muted">
+                      <input
+                        type="checkbox"
+                        checked={card.dueDone}
+                        onChange={(e) => patchMutation.mutate({ dueDone: e.target.checked })}
+                      />
+                      Complete
+                    </label>
+                  )}
                   <button
                     onClick={() => patchMutation.mutate({ dueDate: null, dueDone: false })}
                     className="text-xs text-ink-muted hover:text-danger"
@@ -235,6 +240,11 @@ export function CardModal({ board, card, onClose, onOpenNote }: CardModalProps) 
                 </>
               )}
             </div>
+            {board.settings?.googleTaskListId && (
+              <p className="mt-2 text-[11px] text-ink-faint">
+                Synced with Google Tasks — move this card to the last list to mark it done.
+              </p>
+            )}
           </section>
 
           {/* Description */}
