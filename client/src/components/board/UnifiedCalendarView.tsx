@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, CalendarDays, Loader2, ExternalLink, Plus } from 'lucide-react';
 import type { Board, Card } from '../../types/board';
 import { getCalendarCards, getBoard, getBoards, createCard, updateCard } from '../../api/boards';
 import { getGoogleEvents, getGoogleStatus } from '../../api/google';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   monthGrid, monthLabel, addMonths, addDays, startOfWeek, startOfDay,
-  weekRangeLabel, isoWeek, parseDue, WEEKDAY_LABELS,
+  weekRangeLabel, isoWeek, parseDue, sameDay, WEEKDAY_LABELS,
 } from '../../utils/calendar';
 import { CardModal } from './CardModal';
 
@@ -49,6 +50,145 @@ function read(key: string, fallback: string): string {
 }
 function write(key: string, value: string): void {
   try { localStorage.setItem(key, value); } catch { /* ignore */ }
+}
+
+// ─── Mobile week ("aCalendar"-style) ─────────────────────────────────────
+// A phone-friendly week: a density strip up top, then every day as an equal
+// box in a fixed 2-col × 4-row column-major grid (Mon–Thu down the left,
+// Fri–Sun + a mini-month down the right). A busy day scrolls inside its box,
+// so the week never reflows. Ported from the old per-board CalendarView and
+// adapted to the unified (all-boards + Google) DisplayItem model.
+const MOBILE_WEEKDAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+/** Compact "how busy is each day" strip — a week-at-a-glance scrubber. */
+function DensityStrip({
+  weekDays, itemsForDay, today,
+}: { weekDays: Date[]; itemsForDay: (d: Date) => DisplayItem[]; today: Date }) {
+  return (
+    <div className="flex gap-1 mb-3 shrink-0">
+      {weekDays.map((d, i) => {
+        const cs = itemsForDay(d);
+        const isToday = sameDay(d, today);
+        return (
+          <div key={d.toISOString()} className="flex-1 flex flex-col items-center gap-1">
+            <div className={`w-full h-9 rounded-md flex flex-col justify-end gap-0.5 p-1 ${
+              isToday ? 'bg-accent/15 ring-1 ring-accent' : 'bg-muted-bg'}`}>
+              {cs.slice(0, 4).map((c) => (
+                <span key={c.key} className="h-1 rounded-full" style={{ background: c.color }} />
+              ))}
+            </div>
+            <span className={`text-[10px] ${isToday ? 'text-accent font-semibold' : 'text-ink-muted'}`}>
+              {MOBILE_WEEKDAY_LETTERS[i]}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Month picker for the 8th grid cell; tap a day jumps to its week. */
+function MiniMonth({
+  anchor, weekDays, onPickDay,
+}: { anchor: Date; weekDays: Date[]; onPickDay: (d: Date) => void }) {
+  const cells = monthGrid(anchor);
+  const weekSet = new Set(weekDays.map((d) => d.toDateString()));
+  return (
+    <div className="flex flex-col min-h-0 overflow-hidden rounded-xl border border-edge bg-surface p-2">
+      <div className="text-xs font-semibold text-ink mb-1 shrink-0">
+        {anchor.toLocaleDateString(undefined, { month: 'long' })}
+      </div>
+      <div className="grid grid-cols-7 gap-px text-[10px] flex-1 min-h-0 content-start">
+        {MOBILE_WEEKDAY_LETTERS.map((d, i) => (
+          <div key={i} className="text-center text-ink-faint">{d}</div>
+        ))}
+        {cells.map((c) => {
+          const inWeek = weekSet.has(c.date.toDateString());
+          return (
+            <button key={c.date.toISOString()} onClick={() => onPickDay(c.date)}
+              className={`aspect-square flex items-center justify-center rounded ${
+                c.isToday ? 'bg-accent text-white font-semibold'
+                  : inWeek ? 'bg-accent/15 text-ink'
+                  : !c.inMonth ? 'text-ink-faint'
+                  : c.date.getDay() === 0 ? 'text-danger'
+                  : 'text-ink-muted'}`}>
+              {c.date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** A single day box in the mobile week grid. */
+function MobileDay({
+  date, items, isToday, overdue, dragActive, canAdd, renderItem, onDropDay, onAdd,
+}: {
+  date: Date;
+  items: DisplayItem[];
+  isToday: boolean;
+  overdue: DisplayItem[];
+  dragActive: boolean;
+  canAdd: boolean;
+  renderItem: (it: DisplayItem, showDate?: boolean) => ReactNode;
+  onDropDay: (d: Date) => void;
+  onAdd: (title: string) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState('');
+  const [showOverdue, setShowOverdue] = useState(false);
+  const isSunday = date.getDay() === 0;
+  const isWeekend = isSunday || date.getDay() === 6;
+  function submit() {
+    const t = title.trim();
+    if (t) onAdd(t);
+    setTitle(''); setAdding(false);
+  }
+  return (
+    <div
+      onDragOver={(e) => { if (dragActive) e.preventDefault(); }}
+      onDrop={() => onDropDay(date)}
+      className={`flex flex-col min-h-0 overflow-hidden rounded-xl border p-2 ${
+        isToday ? 'border-accent bg-accent/5 ring-1 ring-accent/40'
+          : isWeekend ? 'border-edge bg-panel/60'
+          : 'border-edge bg-surface'} ${dragActive ? 'hover:border-accent' : ''}`}>
+      <div className="flex items-center justify-between mb-1 shrink-0">
+        <span className={`text-sm font-medium ${isSunday ? 'text-danger' : 'text-ink'}`}>
+          {date.toLocaleDateString(undefined, { weekday: 'short' })} {date.getDate()}
+        </span>
+        <div className="flex items-center gap-1">
+          {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent text-white">today</span>}
+          {canAdd && (
+            <button onClick={() => setAdding(true)} className="text-ink-faint hover:text-ink" title="Add card">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isToday && overdue.length > 0 && (
+        <button onClick={() => setShowOverdue((s) => !s)}
+          className="w-full text-left px-2 py-0.5 mb-1 rounded bg-danger/15 text-danger text-[11px] font-medium shrink-0">
+          {overdue.length}× overdue
+        </button>
+      )}
+
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
+        {isToday && showOverdue && overdue.map((it) => renderItem(it, true))}
+        {items.map((it) => renderItem(it))}
+        {adding && (
+          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} onBlur={submit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') submit();
+              if (e.key === 'Escape') { setAdding(false); setTitle(''); }
+            }}
+            placeholder="Title…"
+            className="w-full px-1 py-0.5 text-[11px] bg-input-bg border border-accent rounded text-ink outline-none" />
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface UnifiedCalendarViewProps {
@@ -207,6 +347,19 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
 
   const monthOfAnchor = anchor.getMonth();
   const today = startOfDay(new Date());
+  const isMobile = useMediaQuery('(max-width: 767px)');
+
+  // Overdue = not-done native cards due in the recent past, rolled onto today's
+  // box in the mobile week. Capped to ~3 weeks so a board full of back-dated log
+  // entries doesn't surface as hundreds of "overdue" items.
+  const OVERDUE_WINDOW_MS = 21 * 24 * 60 * 60 * 1000;
+  const overdue = items
+    .filter((it) => {
+      if (it.external || it.done || hidden.has(it.sourceId) || !it.date) return false;
+      const behind = today.getTime() - startOfDay(it.date).getTime();
+      return behind > 0 && behind <= OVERDUE_WINDOW_MS;
+    })
+    .sort((a, b) => (a.date!.getTime() - b.date!.getTime()));
 
   async function handleOpenCard(c: { id: string; boardId: string }) {
     setOpening(true);
@@ -255,6 +408,11 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
     if (!targetBoardId) return;
     const title = window.prompt('New card:');
     if (title && title.trim()) addCardMutation.mutate({ boardId: targetBoardId, title: title.trim(), date });
+  }
+  // Inline add (mobile week) — no prompt; the day box supplies the title.
+  function addInline(date: Date, title: string) {
+    if (!targetBoardId || !title.trim()) return;
+    addCardMutation.mutate({ boardId: targetBoardId, title: title.trim(), date });
   }
 
   // One chip, colour-coded by source (left border). Native items open the
@@ -359,6 +517,32 @@ export function UnifiedCalendarView({ onOpenNote }: UnifiedCalendarViewProps) {
         {isLoading ? (
           <div className="h-full flex items-center justify-center text-ink-muted gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading calendar…
+          </div>
+        ) : isMobile && mode === 'week' ? (
+          <div className="h-full flex flex-col">
+            <div className="text-[11px] text-ink-muted mb-2 shrink-0">
+              wk {isoWeek(anchor)} · {days[0].getDate()}–{days[6].getDate()}
+            </div>
+            <DensityStrip weekDays={days} itemsForDay={(d) => byDay.get(dayKey(d)) ?? []} today={today} />
+            {/* Fixed week shape: 2 cols × 4 rows, filled column-major (Mon–Thu
+                left, Fri–Sun + mini-month right). Each day is an equal box. */}
+            <div className="grid grid-cols-2 grid-rows-4 grid-flow-col gap-2 flex-1 min-h-0">
+              {days.map((date) => (
+                <MobileDay
+                  key={dayKey(date)}
+                  date={date}
+                  items={byDay.get(dayKey(date)) ?? []}
+                  isToday={sameDay(date, today)}
+                  overdue={overdue}
+                  dragActive={!!dragCardId}
+                  canAdd={!!targetBoardId}
+                  renderItem={renderItem}
+                  onDropDay={dropOn}
+                  onAdd={(t) => addInline(date, t)}
+                />
+              ))}
+              <MiniMonth anchor={anchor} weekDays={days} onPickDay={(d) => setAnchor(startOfDay(d))} />
+            </div>
           </div>
         ) : mode === 'weeks' ? (
           weekData.cols.length === 0 && weekData.noDate.length === 0 ? (
