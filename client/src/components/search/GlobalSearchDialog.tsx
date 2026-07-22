@@ -1,19 +1,49 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, X, FileText, Pencil } from 'lucide-react';
+import { Search, X, FileText, Pencil, Folder, LayoutGrid, Columns3, SquareKanban, AlertCircle } from 'lucide-react';
 import { searchNotes } from '../../api/search';
 import type { SearchResult } from '../../types/search';
 
 interface GlobalSearchDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectNote: (noteId: string, query: string) => void;
+  onSelectResult: (result: SearchResult, query: string) => void;
 }
 
-export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSearchDialogProps) {
+const PAGE_SIZE = 20;
+
+function ResultIcon({ result }: { result: SearchResult }) {
+  const className = 'w-4 h-4 text-ink-faint mt-0.5 shrink-0';
+  switch (result.type) {
+    case 'scratchpad': return <Pencil className={className} />;
+    case 'notebook': return <Folder className={className} />;
+    case 'board': return <LayoutGrid className={className} />;
+    case 'column': return <Columns3 className={className} />;
+    case 'card': return <SquareKanban className={className} />;
+    default: return <FileText className={className} />;
+  }
+}
+
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  const index = text.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+  if (index < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="bg-mark-bg text-mark-text rounded-sm px-0.5">
+        {text.slice(index, index + query.length)}
+      </mark>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
+export function GlobalSearchDialog({ isOpen, onClose, onSelectResult }: GlobalSearchDialogProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -24,25 +54,30 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
       setQuery('');
       setResults([]);
       setTotal(0);
+      setError(false);
     }
   }, [isOpen]);
 
-  const doSearch = useCallback(async (q: string) => {
+  const doSearch = useCallback(async (q: string, offset = 0, append = false) => {
     if (!q.trim()) {
       setResults([]);
       setTotal(0);
+      setError(false);
       return;
     }
 
-    setLoading(true);
+    append ? setLoadingMore(true) : setLoading(true);
+    setError(false);
     try {
-      const data = await searchNotes({ q, limit: 20 });
-      setResults(data.results);
+      const data = await searchNotes({ q, limit: PAGE_SIZE, offset });
+      setResults((current) => append ? [...current, ...data.results] : data.results);
       setTotal(data.total);
     } catch {
-      setResults([]);
+      if (!append) setResults([]);
+      setError(true);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, []);
 
@@ -54,13 +89,10 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
     };
   }, [query, doSearch]);
 
-  // Escape to close
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
@@ -70,12 +102,9 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[15vh]">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Dialog */}
       <div className="relative w-full max-w-xl bg-surface border border-edge rounded-xl shadow-2xl">
-        {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-edge">
           <Search className="w-5 h-5 text-ink-faint" />
           <input
@@ -83,7 +112,7 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search all notes..."
+            placeholder="Search notes, folders, boards and cards…"
             className="flex-1 bg-transparent text-base text-ink placeholder:text-placeholder focus:outline-none"
           />
           {query && (
@@ -91,62 +120,62 @@ export function GlobalSearchDialog({ isOpen, onClose, onSelectNote }: GlobalSear
               <X className="w-4 h-4" />
             </button>
           )}
-          <kbd className="hidden sm:inline-block text-xs text-ink-muted bg-muted-bg px-1.5 py-0.5 rounded border border-edge">
-            ESC
-          </kbd>
+          <kbd className="hidden sm:inline-block text-xs text-ink-muted bg-muted-bg px-1.5 py-0.5 rounded border border-edge">ESC</kbd>
         </div>
 
-        {/* Results */}
-        <div className="max-h-[50vh] overflow-y-auto">
-          {loading && (
-            <div className="px-4 py-8 text-center text-ink-muted">Searching...</div>
-          )}
+        <div className="max-h-[55vh] overflow-y-auto">
+          {loading && <div className="px-4 py-8 text-center text-ink-muted">Searching…</div>}
 
-          {!loading && results.length > 0 && (
-            <>
-              {results.map((result) => (
-                <button
-                  key={result.id}
-                  onClick={() => {
-                    onSelectNote(result.id, query);
-                    onClose();
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-hover transition-colors border-b border-edge-soft"
-                >
-                  <div className="flex items-start gap-2">
-                    {result.id === '__scratchpad__' ? (
-                      <Pencil className="w-4 h-4 text-ink-faint mt-0.5 shrink-0" />
-                    ) : (
-                      <FileText className="w-4 h-4 text-ink-faint mt-0.5 shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-ink truncate">{result.title}</h4>
-                      <p className="text-xs text-ink-muted mt-0.5">{result.notebookName || 'Root'}</p>
-                      <p
-                        className="text-xs text-ink-muted mt-1 line-clamp-2 [&_mark]:bg-mark-bg [&_mark]:text-mark-text [&_mark]:rounded-sm [&_mark]:px-0.5"
-                        dangerouslySetInnerHTML={{ __html: result.headline }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              ))}
-              {total > results.length && (
-                <div className="px-4 py-2 text-xs text-ink-muted text-center">
-                  Showing {results.length} of {total} results
-                </div>
-              )}
-            </>
-          )}
-
-          {!loading && query.trim() && results.length === 0 && (
-            <div className="px-4 py-8 text-center text-ink-muted">
-              No results found for "{query}"
+          {!loading && error && (
+            <div className="px-4 py-8 text-center text-danger">
+              <AlertCircle className="w-5 h-5 mx-auto mb-2" />
+              Search could not be completed. Please try again.
             </div>
+          )}
+
+          {!loading && !error && results.map((result) => (
+            <button
+              key={`${result.type}-${result.id}`}
+              onClick={() => {
+                onSelectResult(result, query);
+                onClose();
+              }}
+              className="w-full text-left px-4 py-3 hover:bg-hover transition-colors border-b border-edge-soft"
+            >
+              <div className="flex items-start gap-2">
+                <ResultIcon result={result} />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-ink truncate">
+                    <HighlightedText text={result.title} query={query} />
+                  </h4>
+                  <p className="text-xs text-ink-muted mt-0.5">{result.context}</p>
+                  {result.headline && (
+                    <p className="text-xs text-ink-muted mt-1 line-clamp-2">
+                      <HighlightedText text={result.headline} query={query} />
+                    </p>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+
+          {!loading && !error && total > results.length && (
+            <button
+              onClick={() => doSearch(query, results.length, true)}
+              disabled={loadingMore}
+              className="w-full px-4 py-3 text-sm text-accent hover:bg-hover disabled:opacity-60"
+            >
+              {loadingMore ? 'Loading…' : `Show more (${results.length} of ${total})`}
+            </button>
+          )}
+
+          {!loading && !error && query.trim() && results.length === 0 && (
+            <div className="px-4 py-8 text-center text-ink-muted">No results found for “{query}”</div>
           )}
 
           {!loading && !query.trim() && (
             <div className="px-4 py-8 text-center text-ink-muted text-sm">
-              Type to search across all your notes
+              Finds complete words, partial words, codes and number strings.
             </div>
           )}
         </div>

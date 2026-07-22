@@ -18,6 +18,7 @@ import { useDndNotebooks } from '../../hooks/useDndNotebooks';
 import { useResizePanel } from '../../hooks/useResizePanel';
 import { getNoteById } from '../../api/notes';
 import { getNotebooks } from '../../api/notebooks';
+import type { SearchResult } from '../../types/search';
 
 type MobileView = 'sidebar' | 'editor';
 
@@ -29,6 +30,7 @@ export function AppShell() {
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [editorSearchQuery, setEditorSearchQuery] = useState<string | null>(null);
+  const [searchCardId, setSearchCardId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<MobileView>('editor');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -78,6 +80,7 @@ export function AppShell() {
     setSelectedBoardId(id);
     setSelectedNoteId(null);
     setEditorSearchQuery(null);
+    setSearchCardId(null);
     setMobileView('editor');
   }, []);
 
@@ -109,26 +112,48 @@ export function AppShell() {
     setMobileView('sidebar');
   }, []);
 
-  const handleSearchSelectNote = useCallback(async (noteId: string, query: string) => {
+  const handleSearchSelectResult = useCallback(async (result: SearchResult, query: string) => {
     setShowCalendar(false);
-    // Scratchpad result: deselect note so scratchpad shows, pass search query
-    if (noteId === '__scratchpad__') {
+    if (result.type === 'scratchpad') {
       setSelectedBoardId(null);
       setSelectedNoteId(null);
       setSelectedNotebookId(null);
+      setSearchCardId(null);
       setEditorSearchQuery(query);
       setMobileView('editor');
       return;
     }
-    const note = await getNoteById(noteId);
-    if (note) {
+
+    if (result.type === 'note') {
+      const note = await getNoteById(result.id);
+      if (!note) return;
       setSelectedBoardId(null);
       setSelectedNotebookId(note.notebookId);
-      setSelectedNoteId(noteId);
+      setSelectedNoteId(result.id);
+      setSearchCardId(null);
       setEditorSearchQuery(query);
       setMobileView('editor');
+      return;
     }
-  }, []);
+
+    setEditorSearchQuery(null);
+    setSelectedNoteId(null);
+
+    if (result.type === 'notebook') {
+      setSelectedBoardId(null);
+      setSelectedNotebookId(result.notebookId ?? result.id);
+      setSearchCardId(null);
+      setMobileView(isDesktop ? 'editor' : 'sidebar');
+      return;
+    }
+
+    if (result.boardId) {
+      setSelectedNotebookId(null);
+      setSelectedBoardId(result.boardId);
+      setSearchCardId(result.type === 'card' ? result.cardId : null);
+      setMobileView('editor');
+    }
+  }, [isDesktop]);
 
   const handleClearEditorSearch = useCallback(() => {
     setEditorSearchQuery(null);
@@ -196,7 +221,7 @@ export function AppShell() {
                 className="flex items-center gap-2 px-3 py-1.5 bg-muted-bg border border-edge rounded-lg text-sm text-ink-muted hover:border-edge transition-colors"
               >
                 <Search className="w-4 h-4" />
-                <span>Search all notes...</span>
+                <span>Search everything…</span>
                 <kbd className="ml-4 text-xs bg-muted-bg px-1 py-0.5 rounded">Ctrl+K</kbd>
               </button>
             </div>
@@ -205,7 +230,12 @@ export function AppShell() {
               {showCalendar ? (
                 <UnifiedCalendarView onOpenNote={handleOpenLinkedNote} />
               ) : selectedBoardId ? (
-                <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
+                <BoardView
+                  boardId={selectedBoardId}
+                  onOpenNote={handleOpenLinkedNote}
+                  searchCardId={searchCardId}
+                  onSearchCardOpened={() => setSearchCardId(null)}
+                />
               ) : selectedNoteId ? (
                 <NoteEditor
                   noteId={selectedNoteId}
@@ -224,7 +254,7 @@ export function AppShell() {
           <GlobalSearchDialog
             isOpen={showSearch}
             onClose={() => setShowSearch(false)}
-            onSelectNote={handleSearchSelectNote}
+            onSelectResult={handleSearchSelectResult}
           />
           <SettingsDialog
             isOpen={showSettings}
@@ -306,7 +336,12 @@ export function AppShell() {
             showCalendar ? (
               <UnifiedCalendarView onOpenNote={handleOpenLinkedNote} />
             ) : selectedBoardId ? (
-              <BoardView boardId={selectedBoardId} onOpenNote={handleOpenLinkedNote} />
+              <BoardView
+                boardId={selectedBoardId}
+                onOpenNote={handleOpenLinkedNote}
+                searchCardId={searchCardId}
+                onSearchCardOpened={() => setSearchCardId(null)}
+              />
             ) : selectedNoteId ? (
               <NoteEditor
                 noteId={selectedNoteId}
@@ -329,7 +364,7 @@ export function AppShell() {
         <GlobalSearchDialog
           isOpen={showSearch}
           onClose={() => setShowSearch(false)}
-          onSelectNote={handleSearchSelectNote}
+          onSelectResult={handleSearchSelectResult}
         />
         <SettingsDialog
           isOpen={showSettings}

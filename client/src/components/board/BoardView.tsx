@@ -9,9 +9,11 @@ import { CardModal } from './CardModal';
 interface BoardViewProps {
   boardId: string;
   onOpenNote: (noteId: string) => void;
+  searchCardId?: string | null;
+  onSearchCardOpened?: () => void;
 }
 
-export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
+export function BoardView({ boardId, onOpenNote, searchCardId, onSearchCardOpened }: BoardViewProps) {
   const { data: board } = useQuery({
     queryKey: ['board', boardId],
     queryFn: () => getBoard(boardId),
@@ -25,14 +27,39 @@ export function BoardView({ boardId, onOpenNote }: BoardViewProps) {
     );
   }
 
-  return <BoardContent key={board.id} board={board} onOpenNote={onOpenNote} />;
+  return (
+    <BoardContent
+      key={board.id}
+      board={board}
+      onOpenNote={onOpenNote}
+      searchCardId={searchCardId}
+      onSearchCardOpened={onSearchCardOpened}
+    />
+  );
 }
 
-function BoardContent({ board, onOpenNote }: { board: Board; onOpenNote: (noteId: string) => void }) {
+function BoardContent({
+  board,
+  onOpenNote,
+  searchCardId,
+  onSearchCardOpened,
+}: {
+  board: Board;
+  onOpenNote: (noteId: string) => void;
+  searchCardId?: string | null;
+  onSearchCardOpened?: () => void;
+}) {
   const queryClient = useQueryClient();
   const [openCardId, setOpenCardId] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [boardName, setBoardName] = useState(board.name);
+
+  useEffect(() => {
+    if (!searchCardId) return;
+    const exists = board.columns.some((column) => column.cards.some((card) => card.id === searchCardId));
+    if (exists) setOpenCardId(searchCardId);
+    onSearchCardOpened?.();
+  }, [board, searchCardId, onSearchCardOpened]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['board', board.id] });

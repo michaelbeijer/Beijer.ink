@@ -10,6 +10,6 @@ export async function search(req: Request, res: Response) {
   }
 
   const { q, notebookId, limit, offset } = parsed.data;
-  const result = await searchService.searchNotes(q, { notebookId, limit, offset });
+  const result = await searchService.searchAll(q, { notebookId, limit, offset });
   res.json(result);
 }
