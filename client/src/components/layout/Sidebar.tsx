@@ -408,9 +408,9 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         className="flex items-center gap-1 w-full mt-2 pt-2 mb-1 px-2 py-0.5 border-t border-edge-soft rounded-b hover:bg-hover"
       >
         <ChevronDown
-          className={`w-3 h-3 shrink-0 text-fav-text transition-transform ${collapsed ? '-rotate-90' : ''}`}
+          className={`w-3 h-3 shrink-0 text-section-label transition-transform ${collapsed ? '-rotate-90' : ''}`}
         />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-fav-text">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-section-label">
           {label}
         </span>
       </button>
@@ -457,8 +457,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
       {onSelectCalendar && (
         <button
           onClick={() => { onSelectCalendar(); onClose?.(); }}
-          className={`flex items-center gap-2 mx-1.5 mt-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
-            calendarActive ? 'bg-active text-ink' : 'text-ink-muted hover:bg-hover hover:text-ink'
+          className={`relative flex items-center gap-2 mx-1.5 mt-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
+            calendarActive ? 'sidebar-item-selected bg-active text-ink' : 'text-ink-muted hover:bg-hover hover:text-ink'
           }`}
         >
           <CalendarDays className="w-4 h-4 text-accent shrink-0" />
@@ -521,8 +521,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
               <div
                 key={`fav-board-${board.id}`}
                 onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
-                className={`group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
-                  board.id === selectedBoardId ? 'bg-active' : 'hover:bg-hover'
+                className={`relative group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
+                  board.id === selectedBoardId ? 'sidebar-item-selected bg-active' : 'hover:bg-hover'
                 }`}
               >
                 <LayoutGrid className="w-4 h-4 text-ink-faint shrink-0" />
@@ -574,7 +574,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
             <SidebarNotebookNode
               key={node.id}
               node={node}
-              isSelected={node.id === selectedNotebookId}
+              isSelected={node.id === selectedNotebookId && selectedNoteId === null}
               isFocused={node.id === focusedId}
               isDropTarget={false}
               editingId={editingId}
@@ -656,8 +656,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
               <div
                 key={`board-${board.id}`}
                 onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
-                className={`group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
-                  board.id === selectedBoardId ? 'bg-active' : 'hover:bg-hover'
+                className={`relative group flex items-center gap-1.5 px-2 py-1 rounded-md cursor-pointer ${
+                  board.id === selectedBoardId ? 'sidebar-item-selected bg-active' : 'hover:bg-hover'
                 }`}
               >
                 <LayoutGrid className="w-4 h-4 text-ink-faint shrink-0" />

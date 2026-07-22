@@ -74,9 +74,9 @@ export function SidebarNoteNode({
       onContextMenu={handleContextMenu}
       className={`relative group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors focus:outline-none ${
         isSelected
-          ? 'bg-active text-ink'
+          ? 'sidebar-item-selected bg-active text-ink'
           : 'text-ink-secondary hover:bg-hover'
-      } ${isFocused ? 'outline outline-2 outline-accent outline-offset-[-2px]' : ''} ${isDragging ? 'opacity-50' : ''}`}
+      } ${isFocused ? 'outline outline-1 outline-accent outline-offset-[-1px]' : ''} ${isDragging ? 'opacity-50' : ''}`}
       style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
       onClick={() => {
         onSelect(node.notebookId, node.noteId);

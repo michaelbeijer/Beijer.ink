@@ -38,9 +38,9 @@ export function SidebarFavoriteItem({
 
   return (
     <div
-      className={`group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
+      className={`relative group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer transition-colors ${
         isSelected
-          ? 'bg-active text-ink'
+          ? 'sidebar-item-selected bg-active text-ink'
           : 'text-ink hover:bg-hover'
       }`}
       style={{ paddingLeft: '8px' }}

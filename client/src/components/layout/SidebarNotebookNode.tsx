@@ -123,9 +123,9 @@ export function SidebarNotebookNode({
         showDropHighlight
           ? 'ring-2 ring-accent ring-inset bg-accent/10'
           : isSelected
-            ? 'bg-active text-ink'
+            ? 'sidebar-item-selected bg-active text-ink'
             : 'text-ink hover:bg-hover'
-      } ${isFocused ? 'outline outline-2 outline-accent outline-offset-[-2px]' : ''} ${isDragging ? 'opacity-50' : ''}`}
+      } ${isFocused ? 'outline outline-1 outline-accent outline-offset-[-1px]' : ''} ${isDragging ? 'opacity-50' : ''}`}
       style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
       onClick={() => {
         onSelect(nb.id);
@@ -177,7 +177,7 @@ export function SidebarNotebookNode({
           onPointerDown={(e) => e.stopPropagation()}
         />
       ) : (
-        <span className="flex-1 text-sm font-medium truncate">{nb.name}</span>
+        <span className="sidebar-folder-name flex-1 text-sm font-medium truncate">{nb.name}</span>
       )}
 
       {nb.publishTarget && (

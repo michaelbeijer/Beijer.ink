@@ -184,9 +184,9 @@
 /* ── Evernote theme (clean white / green) ── */
 [data-theme="evernote"] {
   --t-surface: #ffffff;
-  --t-panel: #f7f7f5;
+  --t-panel: #f4f4f2;
   --t-card: #ffffff;
-  --t-active: rgba(0, 168, 45, 0.12);
+  --t-active: #e7e7e5;
   --t-hover: rgba(0, 0, 0, 0.04);
   --t-muted-bg: #f0f0ed;
   --t-input-bg: #ffffff;
@@ -202,7 +202,7 @@
   --t-edge: #e0e0de;
   --t-edge-soft: #ebebea;
   --t-edge-faint: rgba(224, 224, 222, 0.5);
-  --t-guide: rgba(0, 168, 45, 0.3);
+  --t-guide: rgba(26, 26, 26, 0.14);
   --t-code-bg: #f0f0ed;
   --t-selection: rgba(0, 168, 45, 0.12);
   --t-selection-focused: rgba(0, 168, 45, 0.2);
@@ -223,7 +223,23 @@
   --t-link: #2563eb;
   --t-strikethrough: #a6a6a6;
   --t-fav-text: #a08520;
-  --t-section-label: #00a82d;
+  --t-section-label: #737373;
+}
+
+/* Keep Evernote's green as an accent rather than a large selection fill. */
+[data-theme="evernote"] .sidebar-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--t-accent);
+}
+
+[data-theme="evernote"] .sidebar-folder-name {
+  font-weight: 400;
 }
 
 /* ── Terminal theme (dark console) ── */
