@@ -397,7 +397,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
   });
 
   // A collapsible section header: chevron + label, toggles the section's visibility.
-  const renderSectionHeader = (key: string, label: string, extra = '') => {
+  const renderSectionHeader = (key: string, label: string) => {
     const collapsed = collapsedSections.has(key);
     return (
       <button
@@ -405,12 +405,12 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         tabIndex={-1}
         onClick={() => toggleSection(key)}
         aria-expanded={!collapsed}
-        className={`flex items-center gap-1 w-full mb-1 px-2 py-0.5 rounded hover:bg-hover ${extra}`}
+        className="flex items-center gap-1 w-full mt-2 pt-2 mb-1 px-2 py-0.5 border-t border-edge-soft rounded-b hover:bg-hover"
       >
         <ChevronDown
           className={`w-3 h-3 shrink-0 text-fav-text transition-transform ${collapsed ? '-rotate-90' : ''}`}
         />
-        <span className="text-[10px] font-medium uppercase tracking-wider text-fav-text">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-fav-text">
           {label}
         </span>
       </button>
@@ -483,7 +483,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
           <>
             {renderSectionHeader('favourites', 'Favourites')}
             {!collapsedSections.has('favourites') && (
-            <>
+            <div className="pl-2" role="group">
             {favoriteNotebooks.map((nb) => (
               <SidebarFavoriteItem
                 key={`fav-nb-${nb.id}`}
@@ -539,15 +539,14 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
                 </button>
               </div>
             ))}
-            </>
+            </div>
             )}
-            <div className="my-1.5" />
           </>
         )}
 
         {flatNodes.length > 0 && renderSectionHeader('folders', 'Folders')}
 
-        {!collapsedSections.has('folders') && flatNodes.map((node, i) => {
+        {!collapsedSections.has('folders') && <div className="pl-2" role="group">{flatNodes.map((node, i) => {
           if (node.type === 'note') {
             return (
               <SidebarNoteNode
@@ -600,7 +599,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
               onClose={onClose}
             />
           );
-        })}
+        })}</div>}
 
         {notebooks.length === 0 && rootNotes.length === 0 && (
           <p className="text-sm text-ink-muted text-center py-8">
@@ -631,8 +630,8 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
         {/* Root notes */}
         {rootNotes.length > 0 && (
           <>
-            {renderSectionHeader('notes', 'Notes', 'mt-2')}
-            {!collapsedSections.has('notes') && rootNotes.map((note) => (
+            {renderSectionHeader('notes', 'Notes')}
+            {!collapsedSections.has('notes') && <div className="pl-2" role="group">{rootNotes.map((note) => (
               <SidebarRootNote
                 key={note.id}
                 note={note}
@@ -645,15 +644,15 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
                 onMoveToNotebook={handleMoveNoteToNotebook}
                 onToggleFavorite={handleToggleNoteFavorite}
               />
-            ))}
+            ))}</div>}
           </>
         )}
 
         {/* Boards */}
         {boards.length > 0 && (
           <>
-            {renderSectionHeader('boards', 'Boards', 'mt-2')}
-            {!collapsedSections.has('boards') && boards.map((board) => (
+            {renderSectionHeader('boards', 'Boards')}
+            {!collapsedSections.has('boards') && <div className="pl-2" role="group">{boards.map((board) => (
               <div
                 key={`board-${board.id}`}
                 onClick={() => { onSelectBoard?.(board.id); onClose?.(); }}
@@ -686,7 +685,7 @@ export function Sidebar({ selectedNotebookId, selectedNoteId, selectedBoardId, o
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ))}
+            ))}</div>}
           </>
         )}
       </div>
