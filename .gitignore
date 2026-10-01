@@ -5,3 +5,5 @@ dist/
 .DS_Store
 Thumbs.db
 .vite/
+# Local notes for Claude Code (machine-specific, not for publishing)
+CLAUDE.md
