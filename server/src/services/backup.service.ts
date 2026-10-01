@@ -1,8 +1,29 @@
 import archiver from 'archiver';
 import { prisma } from '../lib/prisma.js';
 
-function sanitizeFilename(name: string): string {
-  return name.replace(/[/\\:*?"<>|]/g, '_').trim() || 'Untitled';
+// Windows Explorer rejects the whole zip ("the Compressed (zipped) Folder is
+// invalid") if a single entry breaks its file-name rules, so every name in the
+// backup must be valid there: no reserved characters or device names, no
+// trailing dots or spaces, and short enough to extract under the 260-char path
+// limit once the destination folder is added.
+const MAX_NAME_CHARS = 80;
+const MAX_FOLDER_CHARS = 40;
+const MAX_DIR_CHARS = 120;
+const MAX_PATH_CHARS = 180;
+// Windows reserves these device names even with an extension ("aux.txt").
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)(?=\.|$)/i;
+
+function sanitizeFilename(name: string, maxChars = MAX_NAME_CHARS): string {
+  const chars = Array.from(
+    name
+      .replace(/[\u0000-\u001f\u007f]/g, ' ')
+      .replace(/[/\\:*?"<>|]/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+  // Array.from splits by code point, so truncation never cuts an emoji in half.
+  const clean = chars.slice(0, maxChars).join('').replace(/[. ]+$/, '').replace(WINDOWS_RESERVED, '$1_');
+  return clean || 'Untitled';
 }
 
 function wrapHtml(title: string, bodyHtml: string): string {
@@ -33,32 +54,46 @@ export async function createBackupArchive() {
 
   // Build notebook ID -> folder path map.
   const notebookMap = new Map(notebooks.map((nb) => [nb.id, nb]));
+  const namesCache = new Map<string, string[]>();
   const pathCache = new Map<string, string>();
+
+  function getNotebookNames(id: string): string[] {
+    if (namesCache.has(id)) return namesCache.get(id)!;
+    const nb = notebookMap.get(id);
+    if (!nb) return [];
+    const names = [...(nb.parentId ? getNotebookNames(nb.parentId) : []), nb.name];
+    namesCache.set(id, names);
+    return names;
+  }
+
+  // One folder-name limit for the whole tree, shared out across its depth, so a
+  // notebook gets the same folder name whichever of its children is exported.
+  const maxDepth = notebooks.reduce((max, nb) => Math.max(max, getNotebookNames(nb.id).length), 1);
+  const folderChars = Math.max(8, Math.min(MAX_FOLDER_CHARS, Math.floor(MAX_DIR_CHARS / maxDepth) - 1));
 
   function getNotebookPath(id: string): string {
     if (pathCache.has(id)) return pathCache.get(id)!;
-    const nb = notebookMap.get(id);
-    if (!nb) return '';
-    const parentPath = nb.parentId ? getNotebookPath(nb.parentId) : '';
-    const fullPath = parentPath ? `${parentPath}/${sanitizeFilename(nb.name)}` : sanitizeFilename(nb.name);
+    const fullPath = getNotebookNames(id).map((name) => sanitizeFilename(name, folderChars)).join('/');
     pathCache.set(id, fullPath);
     return fullPath;
   }
 
   const archive = archiver('zip', { zlib: { level: 9 } });
 
-  // Track used filenames per directory to handle duplicates.
+  // Track used filenames per directory to handle duplicates. Compared
+  // case-insensitively, because on Windows "Note" and "note" are the same file.
   const usedNames = new Map<string, Set<string>>();
 
   function uniqueName(dir: string, base: string): string {
-    if (!usedNames.has(dir)) usedNames.set(dir, new Set());
-    const names = usedNames.get(dir)!;
+    const key = dir.toLowerCase();
+    if (!usedNames.has(key)) usedNames.set(key, new Set());
+    const names = usedNames.get(key)!;
     let name = base;
     let counter = 2;
-    while (names.has(name)) {
+    while (names.has(name.toLowerCase())) {
       name = `${base} (${counter++})`;
     }
-    names.add(name);
+    names.add(name.toLowerCase());
     return name;
   }
 
@@ -74,7 +109,9 @@ export async function createBackupArchive() {
   // Add notes as .html files.
   for (const note of notes) {
     const dir = note.notebookId ? getNotebookPath(note.notebookId) : '';
-    const baseName = sanitizeFilename(note.title);
+    // Fit the whole entry path (folder + name + " (99)" + ".html") in the budget.
+    const room = MAX_PATH_CHARS - (dir ? dir.length + 1 : 0) - ' (99).html'.length;
+    const baseName = sanitizeFilename(note.title, Math.max(20, Math.min(MAX_NAME_CHARS, room)));
     const fileName = uniqueName(dir, baseName);
     const filePath = dir ? `${dir}/${fileName}.html` : `${fileName}.html`;
     archive.append(wrapHtml(note.title, note.content), { name: filePath });

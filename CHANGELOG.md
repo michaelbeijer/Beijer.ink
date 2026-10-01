@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.9**
+Current Version: **0.27.10**
 
 ---
+
+## [0.27.10] – 2026-10-01
+
+### Fixed
+- **Backups open in Windows again.** Windows' built-in zip tool rejected every backup as "invalid" (both the daily Google Drive backup and **Download Backup**) because one note's title produced a file name longer than Windows allows. The notes inside were always intact. Backup file names now follow all of Windows' rules: long titles are shortened (folder names too, so deeply nested notebooks still fit the 260-character path limit), line breaks and runs of spaces are collapsed, trailing dots and spaces are dropped, reserved names such as `CON` or `aux.txt` get an underscore, and "Note" and "note" in the same notebook no longer overwrite each other.
+
 
 ## [0.27.9] – 2026-10-01
 
