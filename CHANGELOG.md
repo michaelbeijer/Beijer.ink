@@ -7,9 +7,15 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.7**
+Current Version: **0.27.8**
 
 ---
+
+## [0.27.8] – 2026-10-01
+
+### Security
+- **The server now refuses to start without a login key.** If `JWT_SECRET` was missing, the server used to fall back to a built-in development key that is visible in this repository, which would let anyone create a valid login. Outside local development it now stops at startup with a clear error instead. Railway keeps the previous deployment running if a new one fails to start, so a missing key can no longer go unnoticed.
+
 
 ## [0.27.7] – 2026-07-06
 

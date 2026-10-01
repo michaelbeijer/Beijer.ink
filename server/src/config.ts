@@ -5,9 +5,17 @@ function envFlag(value: string | undefined, defaultValue = false): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+
+// The dev fallback key below is public in this repo, so a server running on it
+// accepts logins anyone can forge. Refuse to start anywhere but a dev machine.
+if (nodeEnv !== 'development' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set; refusing to start outside development');
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv,
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
   databaseUrl: process.env.DATABASE_URL || '',
   resendApiKey: process.env.RESEND_API_KEY || '',
