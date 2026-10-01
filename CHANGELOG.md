@@ -7,9 +7,16 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.10**
+Current Version: **0.28.0**
 
 ---
+
+## [0.28.0] – 2026-10-02
+
+### Added
+- **Markdown copies in backups.** Every note (and the scratchpad) is now saved twice in each backup: the `.html` file as before, which stays the complete copy, and a `.md` file beside it for reading or importing into Markdown apps such as Obsidian. Headings, bold, links, lists, checklists (`- [x]`), code blocks and simple tables become plain Markdown. Tables that Markdown cannot express (lists or several paragraphs in a cell, coloured cells) stay as HTML inside the `.md` file, as do underlined and coloured text, so Markdown apps still show them as they look in beijer.ink. Text typed as `<t1>` or `<username>` is escaped so it doesn't vanish. If a note ever fails to convert, its `.md` copy is skipped and the backup carries on.
+- Converting a very large table (2,500 rows) originally took two minutes, freezing the app while it ran. A workaround for the converter makes the whole backup take about two seconds, with identical output.
+
 
 ## [0.27.10] – 2026-10-01
 

@@ -1,5 +1,67 @@
 import archiver from 'archiver';
+import TurndownService from 'turndown';
+import { gfm } from '@joplin/turndown-plugin-gfm';
 import { prisma } from '../lib/prisma.js';
+
+// Each note is backed up twice: as HTML (the complete copy, exactly as stored)
+// and as Markdown, for reading or importing into Markdown tools. Tables that
+// Markdown cannot express (lists or several paragraphs in a cell, coloured or
+// nested cells) stay as HTML inside the Markdown; Obsidian, Typora and GitHub
+// display that. Underlined and coloured text are kept as inline HTML for the
+// same reason. The extra options are read by the Joplin GFM plugin.
+const turndown = new TurndownService({
+  headingStyle: 'atx',
+  hr: '---',
+  bulletListMarker: '-',
+  codeBlockStyle: 'fenced',
+  preserveTableStyles: true,
+  preserveNestedTables: true,
+} as TurndownService.Options);
+turndown.use(gfm);
+// Text typed as "<t1>" or "<username>" would be read as an HTML tag by Markdown
+// apps and vanish; escape it so it shows as typed ("a < b" is left alone).
+const escapeMarkdown = turndown.escape.bind(turndown);
+turndown.escape = (text: string) => escapeMarkdown(text).replace(/<(?=[a-zA-Z/!?])/g, '\\<');
+turndown.keep((node) => node.nodeName === 'U' || (node.nodeName === 'SPAN' && !!node.getAttribute('style')));
+// Tiptap wraps the text of every list item (and checklist item, inside a <div>)
+// in a <p>. As a paragraph it would put blank lines between all list items and
+// push a checklist item's text off the line with its [x] box.
+turndown.addRule('listItemParagraph', {
+  filter: (node) => {
+    const parent = node.parentNode as HTMLElement | null;
+    if (!parent) return false;
+    if (node.nodeName === 'DIV') return parent.nodeName === 'LI'; // the checklist item's wrapper
+    if (node.nodeName !== 'P') return false;
+    const inItem = parent.nodeName === 'LI' || (parent.nodeName === 'DIV' && parent.parentNode?.nodeName === 'LI');
+    return inItem && Array.from(parent.children).filter((child) => child.nodeName === 'P').length === 1;
+  },
+  replacement: (content) => content,
+});
+// Performance: the GFM plugin reads `table.rows` inside loops over the rows,
+// and turndown's DOM (domino) builds a fresh list on every read, so a real
+// 2,500-row table took two minutes and froze the server meanwhile. Turndown
+// asks every rule about a <table> before converting its rows, and the newest
+// rule is asked first, so this filter pins one live `rows` list on each table
+// and never matches. Output is unchanged; the time becomes linear.
+turndown.addRule('cacheTableRows', {
+  filter: (node) => {
+    if (node.nodeName === 'TABLE' && !Object.prototype.hasOwnProperty.call(node, 'rows')) {
+      Object.defineProperty(node, 'rows', { value: (node as HTMLTableElement).rows });
+    }
+    return false;
+  },
+  replacement: () => '',
+});
+
+// A note that fails to convert keeps its HTML copy; it must never sink the backup.
+function toMarkdown(html: string): string | null {
+  try {
+    return turndown.turndown(html);
+  } catch (error) {
+    console.error('[backup] Markdown conversion failed for one note (its HTML copy is still included):', error);
+    return null;
+  }
+}
 
 // Windows Explorer rejects the whole zip ("the Compressed (zipped) Folder is
 // invalid") if a single entry breaks its file-name rules, so every name in the
@@ -106,20 +168,27 @@ export async function createBackupArchive() {
     }
   }
 
-  // Add notes as .html files.
+  // Add notes as .html files, each with a .md copy beside it.
   for (const note of notes) {
     const dir = note.notebookId ? getNotebookPath(note.notebookId) : '';
     // Fit the whole entry path (folder + name + " (99)" + ".html") in the budget.
     const room = MAX_PATH_CHARS - (dir ? dir.length + 1 : 0) - ' (99).html'.length;
     const baseName = sanitizeFilename(note.title, Math.max(20, Math.min(MAX_NAME_CHARS, room)));
     const fileName = uniqueName(dir, baseName);
-    const filePath = dir ? `${dir}/${fileName}.html` : `${fileName}.html`;
-    archive.append(wrapHtml(note.title, note.content), { name: filePath });
+    const basePath = dir ? `${dir}/${fileName}` : fileName;
+    archive.append(wrapHtml(note.title, note.content), { name: `${basePath}.html` });
+    const markdown = toMarkdown(note.content);
+    if (markdown !== null) archive.append(markdown, { name: `${basePath}.md` });
+    // Conversion is synchronous CPU work: let other requests through between
+    // notes, so a large backup doesn't freeze the app while it runs.
+    await new Promise((resolve) => setImmediate(resolve));
   }
 
-  // Add scratchpad as a file at the root.
+  // Add scratchpad as files at the root.
   if (scratchpad?.content) {
     archive.append(wrapHtml('Scratchpad', scratchpad.content), { name: 'Scratchpad.html' });
+    const markdown = toMarkdown(scratchpad.content);
+    if (markdown !== null) archive.append(markdown, { name: 'Scratchpad.md' });
   }
 
   archive.finalize();
