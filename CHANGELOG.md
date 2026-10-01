@@ -7,9 +7,18 @@ This project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH
 - **MINOR** — New features, non-breaking enhancements
 - **PATCH** — Bug fixes, small improvements
 
-Current Version: **0.27.8**
+Current Version: **0.27.9**
 
 ---
+
+## [0.27.9] – 2026-10-01
+
+### Fixed
+- **`npm run seed` works again.** The script had been moved to the top-level `scripts/` folder while the command still looked for it in `server/scripts/`. It is back in `server/scripts/` and now reads `DATABASE_URL` and `ADMIN_PASSWORD` from `server/.env`, so the password no longer has to be typed on the command line.
+
+### Changed
+- **README: safer setup instructions.** It now warns never to run `npm run db:migrate` (`prisma migrate dev`) against the production database, because it can reset it; explains that `npm run seed` doubles as a password reset; fixes the `docker build` command; and drops `ADMIN_PASSWORD` from the Railway variables, where the server never read it.
+
 
 ## [0.27.8] – 2026-10-01
 

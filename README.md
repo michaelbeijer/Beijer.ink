@@ -57,28 +57,32 @@ git clone https://github.com/michaelbeijer/beijer.ink.git
 cd beijer.ink
 npm install
 
-cp .env.example .env          # fill in DATABASE_URL, JWT_SECRET, ADMIN_PASSWORD
-cp .env server/.env           # Prisma reads it from here
+cp .env.example .env          # fill in DATABASE_URL (a LOCAL database), JWT_SECRET, ADMIN_PASSWORD
+cp .env server/.env           # the server, Prisma and the seed script read this copy
 
-npm run db:migrate            # apply the schema
-npm run seed                  # set the admin password from ADMIN_PASSWORD
+npm run db:migrate            # create the schema (local databases only, see below)
+npm run seed                  # set the admin password from ADMIN_PASSWORD in server/.env
 npm run dev                   # client → http://localhost:5173, API → :3000
 ```
 
 Open **http://localhost:5173** (the client proxies `/api` to the server).
+
+> **Never run `npm run db:migrate` against the production database.** It runs `prisma migrate dev`, which can reset the database (deleting every note) when it detects drift, and creates a temporary shadow database on the same server. Production needs no manual step: every Railway deploy runs `prisma migrate deploy`, which only applies new migrations. To apply them by hand, run `npx prisma migrate deploy` in `server/`.
+
+`npm run seed` sets the admin password of whichever database `DATABASE_URL` points at, so it also works as a password reset. Delete the `ADMIN_PASSWORD` line from both `.env` files afterwards, and don't put the password on the command line instead (`ADMIN_PASSWORD=… npm run seed`): it would end up in your shell history. To change the password of a running instance, use **Settings → Change password** in the app.
 
 ### Production
 
 ```bash
 npm run build && npm start
 # or
-docker build -f server/Dockerfile -t beijer-ink .
+docker build -t beijer-ink .
 docker run -p 3000:3000 --env-file .env beijer-ink
 ```
 
 ### Environment
 
-`DATABASE_URL`, `JWT_SECRET` (64-char hex), `ADMIN_PASSWORD`, optional `R2_*` (image uploads), and optional `BACKUP_*` (daily SFTP backups — see `.env.example`).
+`DATABASE_URL`, `JWT_SECRET` (64-char hex; outside development the server refuses to start without it), `ADMIN_PASSWORD` (only read by `npm run seed`), optional `R2_*` (image uploads), and optional `BACKUP_*` (daily SFTP backups — see `.env.example`).
 
 ## Project structure
 
@@ -102,8 +106,9 @@ beijer.ink/
 
 1. Create a Railway project with a PostgreSQL add-on.
 2. Add a web service pointing at this repo (it builds via the Dockerfile).
-3. Set `DATABASE_URL`, `JWT_SECRET`, `ADMIN_PASSWORD`, `NODE_ENV=production` (plus `R2_*` / `BACKUP_*` if used).
-4. Add your custom domain in Railway settings.
+3. Set `DATABASE_URL` as a reference to the Postgres service's variables rather than a pasted value, so changing the database password cannot break the app. Also set `JWT_SECRET` and `NODE_ENV=production` (plus `R2_*` / `BACKUP_*` if used). `ADMIN_PASSWORD` is not needed on Railway.
+4. Set the first admin password by running `npm run seed` once against the new database (see Getting started).
+5. Add your custom domain in Railway settings.
 
 ## License
 
