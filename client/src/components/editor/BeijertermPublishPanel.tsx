@@ -88,7 +88,7 @@ export function BeijertermPublishPanel({ note }: { note: Note }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 border-b border-edge bg-accent/5">
       <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-accent shrink-0">
-        <BookMarked className="w-3.5 h-3.5" /> Beijerdictionary
+        <BookMarked className="w-3.5 h-3.5" /> Beijer Dictionary
       </span>
 
       <label className="flex items-center gap-1.5 text-xs text-ink-faint">
@@ -167,7 +167,7 @@ export function BeijertermPublishPanel({ note }: { note: Note }) {
       <button
         onClick={() => publishMutation.mutate()}
         disabled={publishMutation.isPending}
-        title="Rebuild beijerdictionary.com now (otherwise it updates on the next build)"
+        title="Rebuild BeijerDictionary.com now (otherwise it updates on the next build)"
         className="ml-auto inline-flex items-center gap-1.5 px-3 py-1 text-sm rounded bg-accent text-white hover:opacity-90 disabled:opacity-60 shrink-0"
       >
         {publishMutation.isPending ? (

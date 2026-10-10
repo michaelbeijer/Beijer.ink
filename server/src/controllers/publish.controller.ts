@@ -39,7 +39,7 @@ export async function beijertermFeed(req: Request, res: Response) {
 export async function triggerBeijerterm(_req: Request, res: Response) {
   const result = await publishService.triggerBeijertermPublish();
   if (!result.configured) {
-    res.status(503).json({ error: 'No Beijerdictionary deploy hook configured on the server' });
+    res.status(503).json({ error: 'No Beijer Dictionary deploy hook configured on the server' });
     return;
   }
   res.json({ triggered: result.ok, status: result.status });
