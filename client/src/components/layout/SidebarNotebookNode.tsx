@@ -190,7 +190,7 @@ export function SidebarNotebookNode({
       {nb.publishBeijerterm && (
         <BookMarked
           className="w-3 h-3 shrink-0 text-accent"
-          aria-label="Published to beijerterm.com"
+          aria-label="Published to beijerdictionary.com"
         />
       )}
 
@@ -258,9 +258,9 @@ export function SidebarNotebookNode({
               }}
             >
               {nb.publishBeijerterm ? (
-                <><CloudOff className="w-3.5 h-3.5" /> Stop publishing to beijerterm</>
+                <><CloudOff className="w-3.5 h-3.5" /> Stop publishing to Beijerdictionary</>
               ) : (
-                <><BookMarked className="w-3.5 h-3.5" /> Publish to beijerterm</>
+                <><BookMarked className="w-3.5 h-3.5" /> Publish to Beijerdictionary</>
               )}
             </button>
 
